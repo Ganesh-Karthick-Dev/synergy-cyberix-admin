@@ -5,22 +5,16 @@ import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
-import { ArrowRightIcon } from "@/icons/index";
 import { 
   Plus, 
   Eye, 
-  Edit, 
   Trash2, 
   Send, 
   Clock,
   Bell,
   Users,
   CheckCircle,
-  AlertCircle,
-  Target,
-  Calendar,
-  MessageSquare,
-  Zap
+  Target
 } from "lucide-react";
 import Tooltip from "@/components/ui/tooltip/Tooltip";
 import { toast } from "react-hot-toast";
@@ -206,26 +200,6 @@ export default function PushNotifications() {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "info": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
-      case "warning": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
-      case "success": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "error": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      case "promotion": return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "sent": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "scheduled": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
-      case "draft": return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-      case "failed": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -336,7 +310,6 @@ export default function PushNotifications() {
                 <TableCell className="px-6 py-5">
                   <Badge 
                     color={notification.type === "info" ? "info" : notification.type === "warning" ? "warning" : notification.type === "success" ? "success" : notification.type === "error" ? "error" : "primary"}
-                    className={getTypeColor(notification.type)}
                   >
                     {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
                   </Badge>
@@ -354,7 +327,6 @@ export default function PushNotifications() {
                 <TableCell className="px-6 py-5">
                   <Badge 
                     color={notification.status === "sent" ? "success" : notification.status === "scheduled" ? "info" : "light"}
-                    className={getStatusColor(notification.status)}
                   >
                     {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
                   </Badge>
@@ -551,7 +523,7 @@ export default function PushNotifications() {
                         {selectedNotification.message}
                       </p>
                       <div className="flex items-center gap-2">
-                        <Badge className={getTypeColor(selectedNotification.type)}>
+                        <Badge>
                           {selectedNotification.type}
                         </Badge>
                         <span className="text-xs text-gray-500 dark:text-gray-400">

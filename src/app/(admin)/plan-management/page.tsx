@@ -359,7 +359,6 @@ export default function PlanManagement() {
                       {feature}
                     </span>
                     <Button
-                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => removeFeature(index)}
@@ -379,7 +378,6 @@ export default function PlanManagement() {
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
                   />
                   <Button
-                    type="button"
                     onClick={addFeature}
                     disabled={!newFeature.trim()}
                   >
@@ -429,13 +427,12 @@ export default function PlanManagement() {
             {/* Submit Buttons */}
             <div className="flex justify-end gap-3 pt-4">
               <Button
-                type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button>
                 {editingPlan ? 'Update Plan' : 'Create Plan'}
               </Button>
             </div>
@@ -466,7 +463,7 @@ export default function PlanManagement() {
               
               return result;
             })()
-              .map((plan, index) => (
+              .map((plan) => (
                 <div key={plan.id} className={`relative rounded-2xl p-8 flex flex-col h-[600px] ${
                   plan.isPopular 
                     ? 'bg-gradient-to-br from-brand-500 to-brand-600 text-white scale-105 shadow-theme-lg' 

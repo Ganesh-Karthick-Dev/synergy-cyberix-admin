@@ -1,9 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Metadata } from "next";
+import Link from "next/link";
 import UsersTable from "@/components/tables/UsersTable";
 import Pagination from "@/components/tables/Pagination";
-import { showToast } from "@/utils/toast";
 
 export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,9 +21,9 @@ export default function UsersPage() {
         <nav>
           <ol className="flex items-center gap-2">
             <li>
-              <a className="font-medium" href="/">
+              <Link className="font-medium" href="/">
                 Dashboard /
-              </a>
+              </Link>
             </li>
             <li className="font-medium text-primary">Users</li>
           </ol>

@@ -51,7 +51,6 @@ export default function RootLayout({
                     primary: '#ffffff',
                     secondary: '#12b76a',
                   },
-                  closeButton: true,
                 },
                 error: {
                   duration: 4000,
@@ -64,7 +63,6 @@ export default function RootLayout({
                     primary: '#ffffff',
                     secondary: '#f04438',
                   },
-                  closeButton: true,
                 },
                 loading: {
                   style: {

@@ -110,20 +110,6 @@ export default function UsersTable() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<User | null>(null);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "success";
-      case "Inactive":
-        return "error";
-      case "Trial":
-        return "warning";
-      case "Expired":
-        return "error";
-      default:
-        return "default";
-    }
-  };
 
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
@@ -143,7 +129,7 @@ export default function UsersTable() {
     }
   };
 
-  const handleDeleteUser = (userId: number) => {
+  const handleDeleteUser = () => {
     showToast.error("User deleted successfully!");
   };
 
@@ -230,18 +216,16 @@ export default function UsersTable() {
 
                   {/* Plan */}
                   <TableCell className="px-5 py-4">
-                    <Badge
-                      text={user.plan}
-                      className="badge-info"
-                    />
+                    <Badge>
+                      {user.plan}
+                    </Badge>
                   </TableCell>
 
                   {/* Status */}
                   <TableCell className="px-5 py-4">
-                    <Badge
-                      text={user.status}
-                      className={`badge-${getStatusColor(user.status)}`}
-                    />
+                    <Badge>
+                      {user.status}
+                    </Badge>
                   </TableCell>
 
                   {/* Last Scan */}
@@ -309,7 +293,7 @@ export default function UsersTable() {
                       
                       <Tooltip content="Delete User" position="top">
                         <button 
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteUser()}
                           className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         >
                           <svg
@@ -340,8 +324,6 @@ export default function UsersTable() {
       <Modal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-        title="User Profile"
-        size="lg"
       >
         {selectedUser && (
           <div className="p-6">
@@ -360,10 +342,9 @@ export default function UsersTable() {
                   {selectedUser.name}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">{selectedUser.email}</p>
-                <Badge
-                  text={selectedUser.status}
-                  className={`badge-${getStatusColor(selectedUser.status)}`}
-                />
+                <Badge>
+                  {selectedUser.status}
+                </Badge>
               </div>
             </div>
 
@@ -374,7 +355,7 @@ export default function UsersTable() {
               </div>
               <div>
                 <Label>Plan</Label>
-                <Badge text={selectedUser.plan} className="badge-info" />
+                <Badge>{selectedUser.plan}</Badge>
               </div>
               <div>
                 <Label>Phone</Label>
@@ -405,8 +386,6 @@ export default function UsersTable() {
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title="Edit User Profile"
-        size="lg"
       >
         {editFormData && (
           <div className="p-6">
@@ -499,7 +478,7 @@ export default function UsersTable() {
                 >
                   Cancel
                 </Button>
-                <Button size="sm" type="submit">
+                <Button size="sm">
                   Save Changes
                 </Button>
               </div>

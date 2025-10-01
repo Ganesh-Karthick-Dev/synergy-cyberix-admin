@@ -6,7 +6,6 @@ import {
   TableRow,
 } from "../ui/table";
 import Badge from "../ui/badge/Badge";
-import Image from "next/image";
 
 // Define the TypeScript interface for the table rows
 interface ScannerUser {

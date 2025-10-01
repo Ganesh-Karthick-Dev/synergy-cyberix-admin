@@ -5,25 +5,17 @@ import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import Badge from "@/components/ui/badge/Badge";
-import { ArrowRightIcon } from "@/icons/index";
 import { 
   Plus, 
   Eye, 
-  Edit, 
   Trash2, 
   Play, 
   Pause, 
-  Calendar,
-  Clock,
   Megaphone,
   ExternalLink,
-  Copy,
   CheckCircle,
   AlertCircle,
-  Shield,
-  Zap,
-  BarChart3,
-  Globe
+  Edit
 } from "lucide-react";
 import Tooltip from "@/components/ui/tooltip/Tooltip";
 import { toast } from "react-hot-toast";
@@ -217,20 +209,6 @@ export default function PostAds() {
     setIsPreviewModalOpen(true);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      case "medium": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
-      case "low": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive 
-      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-      : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-  };
 
 
   return (
@@ -341,7 +319,6 @@ export default function PostAds() {
                 <TableCell className="px-6 py-5">
                   <Badge 
                     color={ad.isActive ? "success" : "light"}
-                    className={getStatusColor(ad.isActive)}
                   >
                     {ad.isActive ? "Active" : "Inactive"}
                   </Badge>
@@ -349,7 +326,6 @@ export default function PostAds() {
                 <TableCell className="px-6 py-5">
                   <Badge 
                     color={ad.priority === "high" ? "error" : ad.priority === "medium" ? "warning" : "success"}
-                    className={getPriorityColor(ad.priority)}
                   >
                     {ad.priority.charAt(0).toUpperCase() + ad.priority.slice(1)}
                   </Badge>
@@ -661,7 +637,7 @@ export default function PostAds() {
               <div className="bg-brand-500 text-white py-2 overflow-hidden">
                 <div className="flex animate-pulse">
                   {ads.filter(ad => ad.isActive).length > 0 ? (
-                    ads.filter(ad => ad.isActive).map((ad, index) => (
+                    ads.filter(ad => ad.isActive).map((ad) => (
                       <div key={ad.id} className="flex items-center gap-4 whitespace-nowrap mr-8">
                         <span className="font-medium">{ad.title}</span>
                         <span className="text-brand-100">{ad.content}</span>
@@ -696,7 +672,6 @@ export default function PostAds() {
                           <h4 className="font-medium text-gray-900 dark:text-white">{ad.title}</h4>
                           <Badge 
                             color={ad.priority === "high" ? "error" : ad.priority === "medium" ? "warning" : "success"}
-                            className={getPriorityColor(ad.priority)}
                           >
                             {ad.priority.charAt(0).toUpperCase() + ad.priority.slice(1)}
                           </Badge>

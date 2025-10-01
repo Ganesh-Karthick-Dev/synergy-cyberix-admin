@@ -16,7 +16,6 @@ import {
   ShoppingCart, 
   Key, 
   Settings, 
-  Users,
   BarChart3,
   FileText
 } from "lucide-react";
