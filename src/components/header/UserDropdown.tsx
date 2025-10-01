@@ -19,6 +19,10 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   }
 
   const handleLogout = () => {
+    // Clear authentication state
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("user");
+    
     showToast.logout("Logged out successfully from security dashboard");
     setTimeout(() => {
       router.push("/signin");

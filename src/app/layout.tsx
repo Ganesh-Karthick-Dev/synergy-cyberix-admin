@@ -9,6 +9,11 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'CyberScan Pro - Security Scanning Dashboard',
   description: 'Advanced security scanning dashboard for vulnerability assessment and website security analysis',
+  icons: {
+    icon: '/logo/icons8-security-shield-64.png',
+    shortcut: '/logo/icons8-security-shield-64.png',
+    apple: '/logo/icons8-security-shield-64.png',
+  },
 };
 
 const outfit = Outfit({

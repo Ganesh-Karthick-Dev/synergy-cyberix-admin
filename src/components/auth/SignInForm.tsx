@@ -28,6 +28,10 @@ export default function SignInForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (email === "admin" && password === "admin@123") {
+      // Set authentication state
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("user", JSON.stringify({ email: "admin", name: "Admin" }));
+      
       showToast.dismiss(loadingToast);
       showToast.success("Login successful! Welcome to the security scanning dashboard.");
       router.push("/");
