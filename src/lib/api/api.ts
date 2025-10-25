@@ -5,10 +5,15 @@ import { ENV_CONFIG } from './env-config';
 // API Configuration
 const API_BASE_URL = ENV_CONFIG.API_BASE_URL;
 
+// Debug API configuration
+console.log('🔧 API Base URL:', API_BASE_URL);
+console.log('🔧 Environment API URL:', process.env.NEXT_PUBLIC_API_URL);
+
 // Create Axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
+  withCredentials: true, // Enable cookies for cross-origin requests
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,12 +22,15 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
+    // Get token from localStorage (for Authorization header)
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Ensure cookies are sent with requests
+    config.withCredentials = true;
     
     // Log request in development
     if (process.env.NODE_ENV === 'development') {
@@ -30,6 +38,7 @@ apiClient.interceptors.request.use(
         data: config.data,
         params: config.params,
         headers: config.headers,
+        withCredentials: config.withCredentials,
       });
     }
     
@@ -104,15 +113,21 @@ apiClient.interceptors.response.use(
     const errorMessage = error.response?.data?.error?.message || error.message || 'An error occurred';
     const statusCode = error.response?.status || 500;
     
-    // Show toast notification for errors
-    if (typeof window !== 'undefined' && error.response?.status !== 401) {
-      console.error('API Error:', errorMessage);
-    }
+    // Log error for debugging
+    console.error('API Error:', {
+      message: errorMessage,
+      status: statusCode,
+      data: error.response?.data,
+      url: error.config?.url,
+      method: error.config?.method
+    });
     
     return Promise.reject({
       message: errorMessage,
       status: statusCode,
       data: error.response?.data,
+      response: error.response,
+      config: error.config
     });
   }
 );

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi, LoginRequest, RegisterRequest, AuthUser, AuthResponse } from '@/lib/api/services';
+import { useApiErrorHandler } from '../useApiErrorHandler';
 
 // Query Keys
 export const authKeys = {
@@ -9,31 +10,43 @@ export const authKeys = {
 
 // Get user profile
 export const useProfile = () => {
+  const { handleError } = useApiErrorHandler();
+
   return useQuery({
     queryKey: authKeys.profile(),
     queryFn: () => authApi.getProfile(),
     select: (response) => response.data,
     retry: false, // Don't retry on auth failures
+    onError: (error) => {
+      handleError(error);
+    },
   });
 };
 
 // Login mutation
 export const useLogin = () => {
   const queryClient = useQueryClient();
+  const { handleError } = useApiErrorHandler();
 
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       const { accessToken, refreshToken } = response.data;
       
-      // Store tokens in localStorage
+      // Store tokens in localStorage (for Authorization header)
       if (typeof window !== 'undefined') {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
       }
       
+      // Note: Cookies are automatically handled by the browser when withCredentials: true
+      // Your backend should set httpOnly cookies for authentication
+      
       // Set user data in cache
       queryClient.setQueryData(authKeys.profile(), response.data.user);
+    },
+    onError: (error) => {
+      handleError(error);
     },
   });
 };
@@ -57,6 +70,9 @@ export const useLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
       }
+      
+      // Note: Your backend should clear httpOnly cookies on logout
+      // The browser will automatically handle cookie clearing when the backend responds
       
       // Clear all cached data
       queryClient.clear();

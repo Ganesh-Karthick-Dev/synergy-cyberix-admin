@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { Toaster } from 'react-hot-toast';
+import ErrorHandler from '@/components/ErrorHandler';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -32,7 +33,9 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider>
             <SidebarProvider>
-              {children}
+              <ErrorHandler>
+                {children}
+              </ErrorHandler>
               <Toaster
               position="top-right"
               toastOptions={{

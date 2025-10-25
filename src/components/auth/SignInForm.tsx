@@ -8,39 +8,45 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/utils/toast";
+import { useLogin } from "@/hooks/api/useAuth";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState("admin");
-  const [password, setPassword] = useState("admin@123");
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("gotiw78830@lovleo.com");
+  const [password, setPassword] = useState("78%vf4W7M9tB");
   const router = useRouter();
+  const loginMutation = useLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!email || !password) {
+      showToast.error("Please enter both email and password");
+      return;
+    }
 
-    // Show loading toast
-    const loadingToast = showToast.loading("Signing in...");
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (email === "admin" && password === "admin@123") {
-      // Set authentication state
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify({ email: "admin", name: "Admin" }));
+    try {
+      // Show loading toast
+      const loadingToast = showToast.loading("Signing in...");
+      
+      // Call the actual API
+      const response = await loginMutation.mutateAsync({
+        email,
+        password
+      });
       
       showToast.dismiss(loadingToast);
       showToast.success("Login successful! Welcome to the security scanning dashboard.");
+      
+      // Store user data in localStorage
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
       router.push("/");
-    } else {
-      showToast.dismiss(loadingToast);
-      showToast.error("Invalid credentials. Please use admin/admin@123");
+    } catch (error: any) {
+      showToast.error(error.response?.data?.error?.message || "Login failed. Please check your credentials.");
     }
-
-    setIsLoading(false);
   };
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
@@ -120,13 +126,13 @@ export default function SignInForm() {
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Username <span className="text-error-500">*</span>{" "}
+                    Email <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input 
                     defaultValue={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin" 
-                    type="text" 
+                    placeholder="john.doe@company.com" 
+                    type="email" 
                   />
                 </div>
                 <div>
@@ -138,7 +144,7 @@ export default function SignInForm() {
                       defaultValue={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type={showPassword ? "text" : "password"}
-                      placeholder="admin@123"
+                      placeholder="password"
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -170,9 +176,9 @@ export default function SignInForm() {
                   <Button 
                     className="w-full" 
                     size="sm"
-                    disabled={isLoading}
+                    disabled={loginMutation.isPending}
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {loginMutation.isPending ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </div>
