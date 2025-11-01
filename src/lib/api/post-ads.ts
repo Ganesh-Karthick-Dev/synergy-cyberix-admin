@@ -78,7 +78,16 @@ export const toggleAdStatus = async (id: string): Promise<ApiResponse<Ad>> => {
 };
 
 /**
- * 4.6 Delete Post Ad
+ * 4.6 Deactivate All Ads
+ * PUT /api/ads/deactivate-all
+ */
+export const deactivateAllAds = async (): Promise<ApiResponse<{ count: number; message: string }>> => {
+  const response = await apiClient.put('/api/ads/deactivate-all');
+  return response.data;
+};
+
+/**
+ * 4.7 Delete Post Ad
  * DELETE /api/ads/:id
  */
 export const deleteAd = async (id: string): Promise<ApiResponse<{ message: string }>> => {

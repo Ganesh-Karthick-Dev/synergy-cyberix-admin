@@ -11,15 +11,14 @@ import { showToast } from "@/utils/toast";
 import { useLogin } from "@/hooks/api/useAuth";
 import { useApiErrorHandler } from "@/hooks/useApiErrorHandler";
 import { useIsEmailBlocked } from "@/hooks/api/useBlockStatus";
-import modeService from "@/lib/api/modeService";
+import { ENV_CONFIG } from "@/lib/api/env-config";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState("webnox@admin.com");
-  const [password, setPassword] = useState("12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [isDevelopmentMode, setIsDevelopmentMode] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const loginMutation = useLogin();
@@ -27,14 +26,26 @@ export default function SignInForm() {
 
   // Get redirect URL from query params
   const redirectUrl = searchParams.get('redirect') || '/';
+  const errorFromQuery = searchParams.get('error');
 
-  // Initialize mode
+  // Handle error from query params (Google OAuth errors)
   useEffect(() => {
-    const mode = modeService.getModeFromStorage();
-    setIsDevelopmentMode(mode === 'development');
-  }, []);
+    if (errorFromQuery) {
+      showToast.error(decodeURIComponent(errorFromQuery));
+      // Clean up URL
+      router.replace('/login', { scroll: false });
+    }
+  }, [errorFromQuery, router]);
 
-  // Check block status for the email (only in production mode)
+  // Handle Google login
+  const handleGoogleLogin = () => {
+    const apiBaseUrl = ENV_CONFIG.API_BASE_URL;
+    const googleLoginUrl = `${apiBaseUrl}/api/auth/google`;
+    const redirectParam = redirectUrl !== '/' ? `?redirect=${encodeURIComponent(redirectUrl)}` : '';
+    window.location.href = `${googleLoginUrl}${redirectParam}`;
+  };
+
+  // Check block status for the email
   const { 
     isBlocked, 
     attempts, 
@@ -42,15 +53,10 @@ export default function SignInForm() {
     blockedAt, 
     expiresAt, 
     isLoading: isLoadingBlockStatus 
-  } = useIsEmailBlocked(email, isDevelopmentMode ? false : true);
+  } = useIsEmailBlocked(email, true);
 
-  // Countdown timer for blocked accounts (production mode only)
+  // Countdown timer for blocked accounts
   useEffect(() => {
-    if (isDevelopmentMode) {
-      setCountdown(0);
-      return;
-    }
-
     let timer: NodeJS.Timeout;
     if (isBlocked && remainingMinutes > 0) {
       setCountdown(remainingMinutes * 60); // Convert to seconds
@@ -66,7 +72,7 @@ export default function SignInForm() {
       setCountdown(0);
     }
     return () => clearInterval(timer);
-  }, [isBlocked, remainingMinutes, isDevelopmentMode]);
+  }, [isBlocked, remainingMinutes]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -84,8 +90,8 @@ export default function SignInForm() {
       return;
     }
 
-    // Prevent submission if account is blocked (production mode only)
-    if (!isDevelopmentMode && isBlocked) {
+    // Prevent submission if account is blocked
+    if (isBlocked) {
       showToast.error(`Account is blocked. Please try again in ${formatTime(countdown)}`);
       return;
     }
@@ -123,41 +129,35 @@ export default function SignInForm() {
     } catch (error: any) {
       showToast.dismiss(loadingToast);
       
-      // Handle different error types based on mode
-      if (isDevelopmentMode) {
-        // Development mode - simple error handling
-        showToast.error(error?.response?.data?.error?.message || 'Login failed');
-      } else {
-        // Production mode - detailed error handling
-        if (error?.response?.status === 409 && error?.response?.data?.error?.code === 'USER_ALREADY_LOGGED_IN') {
-          const structuredError = {
-            response: {
-              status: 409,
-              data: {
-                success: false,
-                error: {
-                  message: error.response.data.error.message,
-                  statusCode: 409,
-                  code: 'USER_ALREADY_LOGGED_IN',
-                  details: error.response.data.error.details
-                }
+      // Handle error types
+      if (error?.response?.status === 409 && error?.response?.data?.error?.code === 'USER_ALREADY_LOGGED_IN') {
+        const structuredError = {
+          response: {
+            status: 409,
+            data: {
+              success: false,
+              error: {
+                message: error.response.data.error.message,
+                statusCode: 409,
+                code: 'USER_ALREADY_LOGGED_IN',
+                details: error.response.data.error.details
               }
             }
-          };
-          handleError(structuredError);
-        } else if (error?.response?.status === 423 && error?.response?.data?.error?.code === 'ACCOUNT_BLOCKED') {
-          const errorData = error.response.data.error;
-          showToast.error(`Account blocked after 3 failed attempts. Please try again in ${errorData.details?.remainingMinutes || 5} minutes.`);
-        } else if (error?.response?.status === 401 && error?.response?.data?.error?.code === 'INVALID_CREDENTIALS') {
-          const errorData = error.response.data.error;
-          const remainingAttempts = errorData.details?.remainingAttempts || 0;
-          showToast.error(`Invalid credentials. ${remainingAttempts} attempts remaining before account is blocked.`);
-        } else if (error?.response?.status === 403 && error?.response?.data?.error?.code === 'ADMIN_ACCESS_DENIED') {
-          showToast.error('Access denied. Admin login is restricted to authorized personnel only.');
-        } else {
-          // Use the error handler for other errors
-          handleError(error);
-        }
+          }
+        };
+        handleError(structuredError);
+      } else if (error?.response?.status === 423 && error?.response?.data?.error?.code === 'ACCOUNT_BLOCKED') {
+        const errorData = error.response.data.error;
+        showToast.error(`Account blocked after 3 failed attempts. Please try again in ${errorData.details?.remainingMinutes || 5} minutes.`);
+      } else if (error?.response?.status === 401 && error?.response?.data?.error?.code === 'INVALID_CREDENTIALS') {
+        const errorData = error.response.data.error;
+        const remainingAttempts = errorData.details?.remainingAttempts || 0;
+        showToast.error(`Invalid credentials. ${remainingAttempts} attempts remaining before account is blocked.`);
+      } else if (error?.response?.status === 403 && error?.response?.data?.error?.code === 'ADMIN_ACCESS_DENIED') {
+        showToast.error('Access denied. Admin login is restricted to authorized personnel only.');
+      } else {
+        // Use the error handler for other errors
+        handleError(error);
       }
     }
   };
@@ -175,15 +175,6 @@ export default function SignInForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
-            {/* Mode Indicator */}
-            <div className={`mb-4 p-3 rounded-lg text-center text-sm font-medium ${
-              isDevelopmentMode 
-                ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
-                : 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-200'
-            }`}>
-              {isDevelopmentMode ? '🔧 Development Mode' : '🔒 Production Mode'}
-            </div>
-
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
             Cyberix Security Dashboard
             </h1>
@@ -193,7 +184,10 @@ export default function SignInForm() {
           </div>
           <div>
             <div className="w-full">
-              <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10 w-full">
+              <button 
+                onClick={handleGoogleLogin}
+                className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10 w-full"
+              >
                 <svg
                   width="20"
                   height="20"
@@ -244,8 +238,8 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            {/* Block Status Display (Production Mode Only) */}
-            {!isDevelopmentMode && isBlocked && (
+            {/* Block Status Display */}
+            {isBlocked && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,8 +268,8 @@ export default function SignInForm() {
               </div>
             )}
 
-            {/* Attempts Remaining Display (Production Mode Only) */}
-            {!isDevelopmentMode && !isBlocked && attempts > 0 && attemptsRemaining > 0 && (
+            {/* Attempts Remaining Display */}
+            {!isBlocked && attempts > 0 && attemptsRemaining > 0 && (
               <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,8 +296,8 @@ export default function SignInForm() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="john.doe@company.com" 
                     type="email"
-                    disabled={!isDevelopmentMode && isBlocked}
-                    className={!isDevelopmentMode && isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
+                    disabled={isBlocked}
+                    className={isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
                   />
                 </div>
                 <div>
@@ -316,12 +310,12 @@ export default function SignInForm() {
                       onChange={(e) => setPassword(e.target.value)}
                       type={showPassword ? "text" : "password"}
                       placeholder="password"
-                      disabled={!isDevelopmentMode && isBlocked}
-                      className={!isDevelopmentMode && isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
+                      disabled={isBlocked}
+                      className={isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
                     />
                     <span
-                      onClick={() => (!isDevelopmentMode && isBlocked) ? null : setShowPassword(!showPassword)}
-                      className={`absolute z-30 -translate-y-1/2 right-4 top-1/2 ${(!isDevelopmentMode && isBlocked) ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer'}`}
+                      onClick={() => isBlocked ? null : setShowPassword(!showPassword)}
+                      className={`absolute z-30 -translate-y-1/2 right-4 top-1/2 ${isBlocked ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer'}`}
                     >
                       {showPassword ? (
                         <EyeIcon />
@@ -336,15 +330,15 @@ export default function SignInForm() {
                     <Checkbox 
                       checked={isChecked} 
                       onChange={setIsChecked}
-                      disabled={!isDevelopmentMode && isBlocked}
+                      disabled={isBlocked}
                     />
-                    <span className={`block font-normal text-theme-sm ${(!isDevelopmentMode && isBlocked) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-700 dark:text-gray-400'}`}>
+                    <span className={`block font-normal text-theme-sm ${isBlocked ? 'text-gray-500 dark:text-gray-400' : 'text-gray-700 dark:text-gray-400'}`}>
                       Keep me logged in
                     </span>
                   </div>
                   <Link
                     href="/reset-password"
-                    className={`text-sm ${(!isDevelopmentMode && isBlocked) ? 'text-gray-400 cursor-not-allowed' : 'text-brand-500 hover:text-brand-600 dark:text-brand-400'}`}
+                    className={`text-sm ${isBlocked ? 'text-gray-400 cursor-not-allowed' : 'text-brand-500 hover:text-brand-600 dark:text-brand-400'}`}
                   >
                     Forgot password?
                   </Link>
@@ -353,9 +347,9 @@ export default function SignInForm() {
                   <Button 
                     className="w-full" 
                     size="sm"
-                    disabled={loginMutation.isPending || (!isDevelopmentMode && isBlocked)}
+                    disabled={loginMutation.isPending || isBlocked}
                   >
-                    {(!isDevelopmentMode && isBlocked)
+                    {isBlocked
                       ? `Blocked - Try again in ${formatTime(countdown)}`
                       : loginMutation.isPending 
                         ? "Signing in..." 

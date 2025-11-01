@@ -5,6 +5,7 @@ import {
   createAd, 
   updateAd, 
   toggleAdStatus, 
+  deactivateAllAds,
   deleteAd 
 } from '@/lib/api/post-ads';
 import { Ad, AdStats } from '@/lib/api/services';
@@ -110,6 +111,24 @@ export const useToggleAd = () => {
     },
     onError: (error) => {
       console.error('Failed to toggle ad:', error);
+    },
+  });
+};
+
+// Deactivate all ads mutation
+export const useDeactivateAllAds = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deactivateAllAds(),
+    onSuccess: () => {
+      // Invalidate and refetch ads list
+      queryClient.invalidateQueries({ queryKey: adsKeys.lists() });
+      // Invalidate stats
+      queryClient.invalidateQueries({ queryKey: adsKeys.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to deactivate all ads:', error);
     },
   });
 };

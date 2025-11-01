@@ -21,9 +21,10 @@ import {
 } from "lucide-react";
 import Tooltip from "@/components/ui/tooltip/Tooltip";
 import { toast } from "react-hot-toast";
-import { useAds, useAdStats, useCreateAd, useUpdateAd, useToggleAd, useDeleteAd } from "@/hooks/api/useAds";
+import { useAds, useAdStats, useCreateAd, useUpdateAd, useToggleAd, useDeactivateAllAds, useDeleteAd } from "@/hooks/api/useAds";
 import { Ad } from "@/lib/api/services";
 import DatePicker from "@/components/form/date-picker";
+import Loader from "@/components/ui/loader/Loader";
 
 export default function PostAds() {
   // React Query hooks
@@ -32,6 +33,7 @@ export default function PostAds() {
   const createAd = useCreateAd();
   const updateAd = useUpdateAd();
   const toggleAd = useToggleAd();
+  const deactivateAllAds = useDeactivateAllAds();
   const deleteAd = useDeleteAd();
 
   const ads = adsData || [];
@@ -46,6 +48,10 @@ export default function PostAds() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isDeactivateAllModalOpen, setIsDeactivateAllModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [adToDelete, setAdToDelete] = useState<Ad | null>(null);
   const [editingAd, setEditingAd] = useState<Ad | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
@@ -141,13 +147,25 @@ export default function PostAds() {
     }
   };
 
-  const handleDeleteAd = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this ad?")) {
+  const handleDeleteClick = (ad: Ad) => {
+    setAdToDelete(ad);
+    setDeleteConfirmText("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteAd = async () => {
+    if (!adToDelete) return;
+
+    if (deleteConfirmText.toLowerCase() !== "delete") {
+      toast.error("Please type 'delete' to confirm deletion");
       return;
     }
 
     try {
-      await deleteAd.mutateAsync(id);
+      await deleteAd.mutateAsync(adToDelete.id);
+      setIsDeleteModalOpen(false);
+      setAdToDelete(null);
+      setDeleteConfirmText("");
       toast.success("Ad deleted successfully!");
     } catch (error: any) {
       const errorMessage = error?.response?.data?.error?.message || error?.message || "Failed to delete ad";
@@ -193,6 +211,22 @@ export default function PostAds() {
     });
   };
 
+  const handleDeactivateAllAds = async () => {
+    if (stats.activeAds === 0) {
+      toast.error("No active ads to deactivate");
+      return;
+    }
+
+    try {
+      await deactivateAllAds.mutateAsync();
+      setIsDeactivateAllModalOpen(false);
+      toast.success("All ads deactivated successfully!");
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.error?.message || error?.message || "Failed to deactivate all ads";
+      toast.error(errorMessage);
+    }
+  };
+
 
 
   return (
@@ -234,16 +268,30 @@ export default function PostAds() {
           </div>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stats.activeAds}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active Ads</div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.activeAds}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Active Ads</div>
+              </div>
             </div>
+            {stats.activeAds > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeactivateAllModalOpen(true)}
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+                disabled={deactivateAllAds.isPending}
+              >
+                <Pause className="w-4 h-4 mr-2" />
+                {deactivateAllAds.isPending ? "Deactivating..." : "Deactivate All"}
+              </Button>
+            )}
           </div>
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
@@ -277,9 +325,8 @@ export default function PostAds() {
       {/* Ads Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
         {adsLoading ? (
-          <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto mb-4"></div>
-            <p>Loading ads...</p>
+          <div className="py-16 flex items-center justify-center">
+            <Loader size="lg" />
           </div>
         ) : adsError ? (
           <div className="p-12 text-center">
@@ -401,7 +448,10 @@ export default function PostAds() {
                           
                           <Tooltip content="Delete Ad" position="top">
                             <button
-                              onClick={() => handleDeleteAd(ad.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(ad);
+                              }}
                               className="p-2.5 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-all hover:scale-105 active:scale-95"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -685,9 +735,16 @@ export default function PostAds() {
               <Button 
                 onClick={handleCreateAd}
                 disabled={createAd.isPending}
-                className="bg-brand-500 text-white hover:bg-brand-600 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-brand-500 text-white hover:bg-brand-600 px-6 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
               >
-                {createAd.isPending ? "Creating Ad..." : "Create Ad"}
+                {createAd.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader size="sm" className="!m-0" />
+                    Creating...
+                  </span>
+                ) : (
+                  "Create Ad"
+                )}
               </Button>
             </div>
           </div>
@@ -843,11 +900,151 @@ export default function PostAds() {
               <Button 
                 onClick={handleUpdateAd}
                 disabled={updateAd.isPending}
-                className="bg-brand-500 text-white hover:bg-brand-600 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-brand-500 text-white hover:bg-brand-600 px-6 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
               >
-                {updateAd.isPending ? "Updating Ad..." : "Update Ad"}
+                {updateAd.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader size="sm" className="!m-0" />
+                    Updating...
+                  </span>
+                ) : (
+                  "Update Ad"
+                )}
               </Button>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Deactivate All Ads Confirmation Modal */}
+      <Modal
+        isOpen={isDeactivateAllModalOpen}
+        onClose={() => setIsDeactivateAllModalOpen(false)}
+        className="max-w-md mx-auto"
+      >
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            Deactivate All Ads
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Are you sure you want to deactivate all active ads? This will set all {stats.activeAds} active ad{stats.activeAds !== 1 ? 's' : ''} to inactive status.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeactivateAllModalOpen(false)}
+              disabled={deactivateAllAds.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeactivateAllAds}
+              disabled={deactivateAllAds.isPending}
+              className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+            >
+              {deactivateAllAds.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader size="sm" className="!m-0" />
+                  Deactivating...
+                </span>
+              ) : (
+                "Deactivate All"
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Ad Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setAdToDelete(null);
+          setDeleteConfirmText("");
+        }}
+        className="max-w-md mx-auto"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Delete Ad
+            </h2>
+          </div>
+          
+          {adToDelete && (
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete this ad? This action cannot be undone.
+              </p>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                <div className="font-semibold text-sm text-gray-500 dark:text-gray-400 mb-1">
+                  Ad Title:
+                </div>
+                <div className="font-bold text-base text-gray-900 dark:text-white">
+                  {adToDelete.title}
+                </div>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-sm text-red-900 dark:text-red-300 mb-1">
+                      Warning: This action is permanent
+                    </div>
+                    <div className="text-xs text-red-700 dark:text-red-400">
+                      All data associated with this ad will be permanently deleted and cannot be recovered.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mb-6">
+            <label htmlFor="delete-confirm-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Type <span className="font-bold text-red-600 dark:text-red-400">"delete"</span> to confirm:
+            </label>
+            <input
+              id="delete-confirm-input"
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type 'delete' here"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-20 focus:border-red-500 transition-all"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setAdToDelete(null);
+                setDeleteConfirmText("");
+              }}
+              disabled={deleteAd.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteAd}
+              disabled={deleteAd.isPending || deleteConfirmText.toLowerCase() !== "delete"}
+              className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
+            >
+              {deleteAd.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader size="sm" className="!m-0" />
+                  Deleting...
+                </span>
+              ) : (
+                "Delete Ad"
+              )}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -893,31 +1090,56 @@ export default function PostAds() {
                   {/* Marquee ads simulation */}
                   <div className="bg-gradient-to-r from-brand-500 to-brand-600 text-white py-3 overflow-hidden relative">
                     {ads.filter(ad => ad.isActive).length > 0 ? (
-                      <div className="flex animate-marquee whitespace-nowrap">
-                        {ads.filter(ad => ad.isActive).map((ad) => (
-                          <div key={ad.id} className="flex items-center gap-4 mr-12 inline-flex">
-                            <span className="font-semibold text-base">{ad.title}</span>
-                            <span className="text-brand-100 text-sm">{ad.content}</span>
-                            {ad.link && (
-                              <button className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors backdrop-blur-sm">
-                                Learn More →
-                              </button>
-                            )}
+                      <>
+                        <div className="flex animate-marquee whitespace-nowrap">
+                          {ads.filter(ad => ad.isActive).map((ad) => (
+                            <div key={ad.id} className="flex items-center gap-4 mr-12 inline-flex">
+                              <span className="font-semibold text-base">{ad.title}</span>
+                              <span className="text-brand-100 text-sm">{ad.content}</span>
+                              {ad.link && (
+                                <button className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors backdrop-blur-sm">
+                                  Learn More →
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {/* Duplicate for seamless loop */}
+                          {ads.filter(ad => ad.isActive).map((ad) => (
+                            <div key={`duplicate-${ad.id}`} className="flex items-center gap-4 mr-12 inline-flex">
+                              <span className="font-semibold text-base">{ad.title}</span>
+                              <span className="text-brand-100 text-sm">{ad.content}</span>
+                              {ad.link && (
+                                <button className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors backdrop-blur-sm">
+                                  Learn More →
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {/* White accent button at the end */}
+                          <div className="flex items-center mr-12 inline-flex">
+                            <button className="bg-white text-brand-600 hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg transition-all hover:shadow-xl hover:scale-105 active:scale-95">
+                              Protect your website today
+                            </button>
                           </div>
-                        ))}
-                        {/* Duplicate for seamless loop */}
-                        {ads.filter(ad => ad.isActive).map((ad) => (
-                          <div key={`duplicate-${ad.id}`} className="flex items-center gap-4 mr-12 inline-flex">
-                            <span className="font-semibold text-base">{ad.title}</span>
-                            <span className="text-brand-100 text-sm">{ad.content}</span>
-                            {ad.link && (
-                              <button className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors backdrop-blur-sm">
-                                Learn More →
-                              </button>
-                            )}
+                          {/* Duplicate button for seamless loop */}
+                          <div className="flex items-center mr-12 inline-flex">
+                            <button className="bg-white text-brand-600 hover:bg-gray-50 px-6 py-2.5 rounded-lg font-semibold text-sm shadow-lg transition-all hover:shadow-xl hover:scale-105 active:scale-95">
+                              Protect your website today
+                            </button>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                        {/* Fixed button on the right side */}
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50">
+                          <button className="relative whitespace-nowrap px-6 py-2.5 rounded-lg font-semibold text-sm text-brand-600 bg-white/95 backdrop-blur-sm border border-white/50 shadow-[0_4px_20px_rgba(0,0,0,0.1),0_0_0_1px_rgba(255,255,255,0.5)_inset] hover:shadow-[0_6px_30px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.7)_inset] hover:bg-white transition-all hover:scale-105 active:scale-95 overflow-hidden group">
+                            {/* Glossy overlay gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/20 to-transparent opacity-60 pointer-events-none rounded-lg"></div>
+                            {/* Highlight effect */}
+                            <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-lg pointer-events-none"></div>
+                            {/* Text with slight shadow for depth */}
+                            <span className="relative z-10 drop-shadow-sm">Protect your website today</span>
+                          </button>
+                        </div>
+                      </>
                     ) : (
                       <div className="text-brand-100 text-center w-full py-2 text-sm">
                         No active ads to display

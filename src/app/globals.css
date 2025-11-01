@@ -636,6 +636,7 @@ span.flatpickr-weekday,
   animation-play-state: paused;
 }
 
+
 .fc .fc-view-harness {
   @apply max-w-full overflow-x-auto custom-scrollbar;
 }
