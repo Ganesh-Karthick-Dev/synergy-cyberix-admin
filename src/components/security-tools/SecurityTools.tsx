@@ -101,22 +101,25 @@ export const SecurityTools: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Security Tools</h1>
-        <div className="flex space-x-2">
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Security Tools Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage and configure security scanning tools and utilities</p>
+        </div>
+        <div className="flex gap-3">
           <button
             onClick={handleDeployUpdates}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 flex items-center gap-2"
             disabled={deployUpdates.isPending}
           >
             {deployUpdates.isPending ? 'Deploying...' : 'Deploy Updates'}
           </button>
-          <div className="text-sm text-gray-500">
-            Real API Integration - Security Tools
-          </div>
         </div>
       </div>
+
+      <div className="p-6 space-y-6">
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -322,6 +325,8 @@ export const SecurityTools: React.FC = () => {
           </div>
         </div>
       </div>
+
+    </div>
     </div>
   );
 };

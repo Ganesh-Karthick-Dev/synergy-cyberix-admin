@@ -1,5 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adsApi, Ad, AdStats } from '@/lib/api/services';
+import { 
+  getAds, 
+  getAdStats, 
+  createAd, 
+  updateAd, 
+  toggleAdStatus, 
+  deleteAd 
+} from '@/lib/api/post-ads';
+import { Ad, AdStats } from '@/lib/api/services';
 
 // Query Keys
 export const adsKeys = {
@@ -17,8 +25,9 @@ export const useAds = (params?: {
 }) => {
   return useQuery({
     queryKey: adsKeys.list(params),
-    queryFn: () => adsApi.getAds(params),
+    queryFn: () => getAds(params),
     select: (response) => response.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -26,8 +35,9 @@ export const useAds = (params?: {
 export const useAdStats = () => {
   return useQuery({
     queryKey: adsKeys.stats(),
-    queryFn: () => adsApi.getAdStats(),
+    queryFn: () => getAdStats(),
     select: (response) => response.data,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -36,13 +46,23 @@ export const useCreateAd = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<Ad, 'id' | 'createdAt' | 'updatedAt' | 'clicks' | 'impressions'>) =>
-      adsApi.createAd(data),
+    mutationFn: (data: {
+      title: string;
+      content: string;
+      link?: string;
+      priority: 'high' | 'medium' | 'low';
+      startDate: string;
+      endDate: string;
+      isActive?: boolean;
+    }) => createAd(data),
     onSuccess: () => {
       // Invalidate and refetch ads list
       queryClient.invalidateQueries({ queryKey: adsKeys.lists() });
       // Invalidate stats
       queryClient.invalidateQueries({ queryKey: adsKeys.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to create ad:', error);
     },
   });
 };
@@ -52,13 +72,26 @@ export const useUpdateAd = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Ad> }) =>
-      adsApi.updateAd(id, data),
+    mutationFn: ({ id, data }: { 
+      id: string; 
+      data: Partial<{
+        title: string;
+        content: string;
+        link: string;
+        priority: 'high' | 'medium' | 'low';
+        startDate: string;
+        endDate: string;
+        isActive: boolean;
+      }> 
+    }) => updateAd(id, data),
     onSuccess: () => {
       // Invalidate and refetch ads list
       queryClient.invalidateQueries({ queryKey: adsKeys.lists() });
       // Invalidate stats
       queryClient.invalidateQueries({ queryKey: adsKeys.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to update ad:', error);
     },
   });
 };
@@ -68,12 +101,15 @@ export const useToggleAd = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => adsApi.toggleAd(id),
+    mutationFn: (id: string) => toggleAdStatus(id),
     onSuccess: () => {
       // Invalidate and refetch ads list
       queryClient.invalidateQueries({ queryKey: adsKeys.lists() });
       // Invalidate stats
       queryClient.invalidateQueries({ queryKey: adsKeys.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle ad:', error);
     },
   });
 };
@@ -83,12 +119,15 @@ export const useDeleteAd = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => adsApi.deleteAd(id),
-    onSuccess: () => {
+    mutationFn: (id: string) => deleteAd(id),
+    onSuccess: (_, id) => {
       // Invalidate and refetch ads list
       queryClient.invalidateQueries({ queryKey: adsKeys.lists() });
       // Invalidate stats
       queryClient.invalidateQueries({ queryKey: adsKeys.stats() });
+    },
+    onError: (error) => {
+      console.error('Failed to delete ad:', error);
     },
   });
 };

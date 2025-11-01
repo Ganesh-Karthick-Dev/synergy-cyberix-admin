@@ -118,18 +118,86 @@ export default function UserProfileModal({ isOpen, onClose, userEmail, userName 
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email Verified</label>
-                  <span className={`inline-flex items-center gap-1 ${
+                  <span className={`inline-flex items-center gap-2 ${
                     profile.user.emailVerified ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {profile.user.emailVerified ? '✅ Yes' : '❌ No'}
+                    {profile.user.emailVerified ? (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="font-medium">Yes</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="font-medium">No</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">2FA Enabled</label>
-                  <span className={`inline-flex items-center gap-1 ${
+                  <span className={`inline-flex items-center gap-2 ${
                     profile.user.twoFactorEnabled ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {profile.user.twoFactorEnabled ? '✅ Yes' : '❌ No'}
+                    {profile.user.twoFactorEnabled ? (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="font-medium">Yes</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="font-medium">No</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div>

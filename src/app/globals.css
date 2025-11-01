@@ -460,6 +460,7 @@
 }
 .flatpickr-calendar {
   @apply mt-2 !bg-white !rounded-xl !p-5 !border !border-gray-200 dark:!border-gray-800 !text-gray-500 dark:!bg-gray-dark dark:!text-gray-400 dark:!shadow-theme-xl 2xsm:!w-auto;
+  z-index: 999999 !important;
 }
 
 .flatpickr-months .flatpickr-prev-month:hover svg,
@@ -604,6 +605,35 @@ span.flatpickr-weekday,
 
 .flatpickr-calendar.static {
   @apply right-0;
+  z-index: 999999 !important;
+}
+
+/* Ensure flatpickr calendar appears above modals and all other elements */
+.flatpickr-calendar,
+.flatpickr-calendar.open,
+.flatpickr-calendar.animate.open,
+.flatpickr-calendar.static,
+.flatpickr-calendar.static.open {
+  z-index: 999999 !important;
+  position: absolute !important;
+}
+
+/* Marquee animation for ad preview */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 .fc .fc-view-harness {

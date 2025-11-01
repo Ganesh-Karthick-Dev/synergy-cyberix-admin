@@ -5,6 +5,7 @@ import {
   getPlanById,
   updatePlan,
   deletePlan,
+  togglePlanStatus,
   ServicePlan,
   CreatePlanRequest,
   UpdatePlanRequest,
@@ -108,6 +109,27 @@ export const useDeletePlan = () => {
     },
     onError: (error) => {
       console.error('Failed to delete plan:', error);
+    },
+  });
+};
+
+/**
+ * 3.6 Toggle Plan Status Mutation
+ * PUT /api/plans/:id/toggle-status
+ */
+export const useTogglePlanStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => togglePlanStatus(id),
+    onSuccess: (response, id) => {
+      // Update the plan in cache
+      queryClient.setQueryData(servicePlansKeys.planDetail(id), response.data);
+      // Invalidate and refetch plans list to update UI
+      queryClient.invalidateQueries({ queryKey: servicePlansKeys.plans() });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle plan status:', error);
     },
   });
 };

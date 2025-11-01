@@ -87,10 +87,10 @@ export const updatePlan = async (
 };
 
 /**
- * 3.5 Delete Plan
- * DELETE /api/plans/:id
+ * 3.5 Toggle Plan Status (Active/Inactive)
+ * PUT /api/plans/:id/toggle-status
  */
-export const deletePlan = async (id: string): Promise<ApiResponse<{ message: string }>> => {
-  const response = await apiClient.delete(`/api/plans/${id}`);
+export const togglePlanStatus = async (id: string): Promise<ApiResponse<ServicePlan>> => {
+  const response = await apiClient.put(`/api/plans/${id}/toggle-status`);
   return response.data;
 };

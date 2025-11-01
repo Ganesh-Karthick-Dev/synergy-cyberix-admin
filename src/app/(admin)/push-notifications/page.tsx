@@ -202,14 +202,16 @@ export default function PushNotifications() {
 
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Push Notifications</h1>
-          <p className="text-gray-600 dark:text-gray-400">Send notifications to all users who have installed your ElectronJS software</p>
-        </div>
-        <div className="flex gap-3">
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-title-md2 font-semibold text-black dark:text-white">
+          Push Notifications Management
+        </h2>
+      </div>
+
+      <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
+        {/* Header Actions */}
+        <div className="flex items-center justify-end gap-3">
           <Button
             variant="outline"
             startIcon={<Target className="w-4 h-4" />}
@@ -224,10 +226,9 @@ export default function PushNotifications() {
             Create Notification
           </Button>
         </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
@@ -630,6 +631,7 @@ export default function PushNotifications() {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   );
 }

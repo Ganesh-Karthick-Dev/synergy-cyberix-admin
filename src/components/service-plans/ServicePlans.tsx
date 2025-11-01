@@ -12,6 +12,7 @@ import {
   usePopularPlans,
   useInactivePlans,
 } from '@/hooks/api/useServicePlans';
+import { toast } from 'react-hot-toast';
 
 interface ServicePlansProps {
   planId?: string;
@@ -49,9 +50,10 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
     try {
       await createPlan.mutateAsync(planData);
       setShowCreateModal(false);
-      alert('Plan created successfully!');
-    } catch (error) {
-      alert('Failed to create plan');
+      toast.success('Plan created successfully!');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to create plan';
+      toast.error(errorMessage);
     }
   };
 
@@ -60,19 +62,21 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
       await updatePlan.mutateAsync({ id: planId, data: planData });
       setShowEditModal(false);
       setEditingPlan(null);
-      alert('Plan updated successfully!');
-    } catch (error) {
-      alert('Failed to update plan');
+      toast.success('Plan updated successfully!');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to update plan';
+      toast.error(errorMessage);
     }
   };
 
   const handleDeletePlan = async (planId: string) => {
-    if (confirm('Are you sure you want to delete this plan?')) {
+    if (window.confirm('Are you sure you want to delete this plan?')) {
       try {
         await deletePlan.mutateAsync(planId);
-        alert('Plan deleted successfully!');
-      } catch (error) {
-        alert('Failed to delete plan');
+        toast.success('Plan deleted successfully!');
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to delete plan';
+        toast.error(errorMessage);
       }
     }
   };
@@ -103,30 +107,42 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
   }
 
   if (plansError) {
+    const errorMessage = plansError?.message || 'Failed to load plans';
+    toast.error(errorMessage);
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <h3 className="text-red-800 font-semibold">Error Loading Plans</h3>
-        <p className="text-red-600">{plansError.message}</p>
+        <p className="text-red-600">{errorMessage}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Service Plans</h1>
-        <div className="flex space-x-2">
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Security Service Plans</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage your cybersecurity service packages and pricing</p>
+        </div>
+        <div className="flex gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-600 flex items-center gap-2"
           >
-            Create New Plan
+            <span>+</span>
+            Add New Plan
           </button>
-          <div className="text-sm text-gray-500">
-            Real API Integration - Service Plans
-          </div>
         </div>
       </div>
+
+      <div className="p-6 space-y-6">
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -319,6 +335,123 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
         </div>
       )}
 
+      {/* Edit Plan Modal */}
+      {showEditModal && editingPlan && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Plan</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingPlan(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const planData = {
+                  name: formData.get('name') as string,
+                  price: Number(formData.get('price')),
+                  description: formData.get('description') as string,
+                  features: (formData.get('features') as string).split('\n').filter(f => f.trim()),
+                  deliveryDays: Number(formData.get('deliveryDays')),
+                  isPopular: formData.get('isPopular') === 'on',
+                  isActive: formData.get('isActive') === 'on',
+                };
+                handleUpdatePlan(editingPlan.id, planData);
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    defaultValue={editingPlan.name}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Price</label>
+                  <input
+                    type="number"
+                    name="price"
+                    defaultValue={editingPlan.price}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    name="description"
+                    defaultValue={editingPlan.description}
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Features (one per line)</label>
+                  <textarea
+                    name="features"
+                    defaultValue={Array.isArray(editingPlan.features) ? editingPlan.features.join('\n') : ''}
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Delivery Days</label>
+                  <input
+                    type="number"
+                    name="deliveryDays"
+                    defaultValue={editingPlan.deliveryDays}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input type="checkbox" name="isPopular" defaultChecked={editingPlan.isPopular} className="mr-2" />
+                    <span className="text-sm text-gray-700">Popular</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input type="checkbox" name="isActive" defaultChecked={editingPlan.isActive} className="mr-2" />
+                    <span className="text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingPlan(null);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    disabled={updatePlan.isPending}
+                  >
+                    {updatePlan.isPending ? 'Updating...' : 'Update Plan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Plan Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -472,6 +605,7 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
