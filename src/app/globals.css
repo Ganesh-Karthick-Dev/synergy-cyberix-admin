@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../styles/blocking-system.css';
 
 /* Custom font for Cyberix logo */
 @font-face {

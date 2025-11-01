@@ -22,11 +22,16 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage (for Authorization header)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    // For logout endpoints, don't use Authorization header - rely on cookies
+    const isLogoutEndpoint = config.url?.includes('/logout');
     
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!isLogoutEndpoint) {
+      // Get token from localStorage (for Authorization header)
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     
     // Ensure cookies are sent with requests
@@ -39,6 +44,7 @@ apiClient.interceptors.request.use(
         params: config.params,
         headers: config.headers,
         withCredentials: config.withCredentials,
+        isLogoutEndpoint,
       });
     }
     

@@ -106,10 +106,27 @@ export const useErrorHandler = () => {
   }, [closeErrorModal]);
 
   const contactSupport = useCallback(() => {
-    // You can implement contact support logic here
-    window.open('mailto:support@cyberix.com?subject=Technical Support Request', '_blank');
+    // Create a detailed support email with error information
+    const subject = 'Technical Support Request - Login Issue';
+    const body = `Hello Support Team,
+
+I'm experiencing a login issue with the following details:
+
+Error Code: ${errorState.currentError?.code || 'Unknown'}
+Error Message: ${errorState.currentError?.message || 'No message'}
+Status Code: ${errorState.currentError?.statusCode || 'Unknown'}
+Timestamp: ${new Date().toISOString()}
+User Agent: ${navigator.userAgent}
+
+Please help me resolve this issue.
+
+Best regards,
+[Your Name]`;
+
+    const mailtoLink = `mailto:support@cyberix.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, '_blank');
     closeErrorModal();
-  }, [closeErrorModal]);
+  }, [closeErrorModal, errorState.currentError]);
 
   return {
     errorState,

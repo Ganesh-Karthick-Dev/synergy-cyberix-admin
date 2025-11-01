@@ -14,101 +14,30 @@ import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Tooltip from "../ui/tooltip/Tooltip";
 import { showToast } from "@/utils/toast";
+import { useUsers, useUpdateUser, useDeleteUser } from "@/hooks/api/useUsers";
+import { User } from "@/lib/api/services";
+import UserProfileModal from "./UserProfileModal";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  company: string;
-  plan: string;
-  status: "Active" | "Inactive" | "Trial" | "Expired";
-  lastScan: string;
-  scansCompleted: number;
-  avatar: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
-}
-
-// Define the users data - Software Downloaders
-const usersData: User[] = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@techcorp.com",
-    company: "TechCorp Solutions",
-    plan: "Professional",
-    status: "Active",
-    lastScan: "2 hours ago",
-    scansCompleted: 45,
-    avatar: "/images/user/user-17.jpg",
-    phone: "+1 (555) 123-4567",
-    location: "New York, USA",
-    bio: "IT Security Manager at TechCorp",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    email: "sarah.j@startup.io",
-    company: "StartupIO",
-    plan: "Trial",
-    status: "Trial",
-    lastScan: "1 day ago",
-    scansCompleted: 8,
-    avatar: "/images/user/user-18.jpg",
-    phone: "+1 (555) 234-5678",
-    location: "San Francisco, USA",
-    bio: "Founder & CTO at StartupIO",
-  },
-  {
-    id: 3,
-    name: "Mike Chen",
-    email: "mike.chen@enterprise.com",
-    company: "Enterprise Systems",
-    plan: "Enterprise",
-    status: "Active",
-    lastScan: "3 hours ago",
-    scansCompleted: 127,
-    avatar: "/images/user/user-19.jpg",
-    phone: "+1 (555) 345-6789",
-    location: "Seattle, USA",
-    bio: "Senior Security Engineer",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.davis@freelance.com",
-    company: "Freelance Consultant",
-    plan: "Basic",
-    status: "Expired",
-    lastScan: "1 week ago",
-    scansCompleted: 23,
-    avatar: "/images/user/user-20.jpg",
-    phone: "+1 (555) 456-7890",
-    location: "Austin, USA",
-    bio: "Independent Security Consultant",
-  },
-  {
-    id: 5,
-    name: "Alex Rodriguez",
-    email: "alex.r@agency.com",
-    company: "Digital Security Agency",
-    plan: "Professional",
-    status: "Active",
-    lastScan: "30 minutes ago",
-    scansCompleted: 89,
-    avatar: "/images/user/user-21.jpg",
-    phone: "+1 (555) 567-8901",
-    location: "Miami, USA",
-    bio: "Security Agency Director",
-  },
-];
+// Default avatar for users without profile images
+const defaultAvatar = "/images/user/default-avatar.jpg";
 
 export default function UsersTable() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<User | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedUserEmail, setSelectedUserEmail] = useState<string>("");
+
+  // Fetch users data from API
+  const { data: usersData, isLoading, error } = useUsers({
+    page: 1,
+    limit: 10,
+  });
+
+  // Mutations
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
 
 
   const handleViewUser = (user: User) => {
@@ -116,22 +45,95 @@ export default function UsersTable() {
     setIsViewModalOpen(true);
   };
 
+  const handleViewProfile = (user: User) => {
+    setSelectedUserEmail(user.email);
+    setIsProfileModalOpen(true);
+  };
+
   const handleEditUser = (user: User) => {
     setEditFormData({ ...user });
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editFormData) {
-      showToast.success("User profile updated successfully!");
-      setIsEditModalOpen(false);
-      setEditFormData(null);
+      try {
+        await updateUserMutation.mutateAsync({
+          id: editFormData.id,
+          data: editFormData
+        });
+        showToast.success("User profile updated successfully!");
+        setIsEditModalOpen(false);
+        setEditFormData(null);
+      } catch (error) {
+        showToast.error("Failed to update user profile");
+      }
     }
   };
 
-  const handleDeleteUser = () => {
-    showToast.error("User deleted successfully!");
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm("Are you sure you want to delete this user?")) {
+      try {
+        await deleteUserMutation.mutateAsync(userId);
+        showToast.success("User deleted successfully!");
+      } catch (error) {
+        showToast.error("Failed to delete user");
+      }
+    }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-gray-800 shadow-sm dark:shadow-none">
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading users...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-gray-800 shadow-sm dark:shadow-none">
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-red-500 mb-4">
+              <svg className="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-red-600 dark:text-red-400 mb-2">Failed to load users</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {error instanceof Error ? error.message : 'An error occurred'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!usersData?.data || usersData.data.length === 0) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-gray-800 shadow-sm dark:shadow-none">
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">No users found</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-gray-800 shadow-sm dark:shadow-none">
@@ -151,13 +153,7 @@ export default function UsersTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
-                  Company
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
-                  Plan
+                  Role
                 </TableCell>
                 <TableCell
                   isHeader
@@ -169,7 +165,13 @@ export default function UsersTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
-                  Last Scan
+                  Email Verified
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
+                  Phone
                 </TableCell>
                 <TableCell
                   isHeader
@@ -182,15 +184,15 @@ export default function UsersTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {usersData.map((user) => (
+              {usersData.data.map((user: User) => (
                 <TableRow key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
                   {/* User Info */}
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-gray-200 dark:ring-white/10">
                         <Image
-                          src={user.avatar}
-                          alt={user.name}
+                          src={user.avatar || defaultAvatar}
+                          alt={`${user.firstName} ${user.lastName}`}
                           width={40}
                           height={40}
                           className="h-full w-full object-cover"
@@ -198,52 +200,65 @@ export default function UsersTable() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">
-                          {user.name}
+                          {user.firstName} {user.lastName}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {user.email}
                         </p>
+                        {user.username && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            @{user.username}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </TableCell>
 
-                  {/* Company */}
+                  {/* Role */}
                   <TableCell className="px-5 py-4">
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {user.company}
-                    </p>
-                  </TableCell>
-
-                  {/* Plan */}
-                  <TableCell className="px-5 py-4">
-                    <Badge>
-                      {user.plan}
-                    </Badge>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      user.role === 'ADMIN' 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' 
+                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200'
+                    }`}>
+                      {user.role}
+                    </span>
                   </TableCell>
 
                   {/* Status */}
                   <TableCell className="px-5 py-4">
-                    <Badge>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      user.status === 'ACTIVE' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
+                    }`}>
                       {user.status}
-                    </Badge>
+                    </span>
                   </TableCell>
 
-                  {/* Last Scan */}
+                  {/* Email Verified */}
                   <TableCell className="px-5 py-4">
-                    <div>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {user.lastScan}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {user.scansCompleted} scans
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg ${user.emailVerified ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {user.emailVerified ? '✅' : '❌'}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {user.emailVerified ? 'Verified' : 'Not Verified'}
+                      </span>
                     </div>
+                  </TableCell>
+
+                  {/* Phone */}
+                  <TableCell className="px-5 py-4">
+                    <p className="text-gray-900 dark:text-white">
+                      {user.phone || 'Not provided'}
+                    </p>
                   </TableCell>
 
                   {/* Actions */}
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <Tooltip content="View Profile" position="top">
+                      <Tooltip content="View Basic Info" position="top">
                         <button 
                           onClick={() => handleViewUser(user)}
                           className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
@@ -265,6 +280,27 @@ export default function UsersTable() {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
+                      </Tooltip>
+                      
+                      <Tooltip content="View Full Profile (API)" position="top">
+                        <button 
+                          onClick={() => handleViewProfile(user)}
+                          className="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             />
                           </svg>
                         </button>
@@ -293,8 +329,9 @@ export default function UsersTable() {
                       
                       <Tooltip content="Delete User" position="top">
                         <button 
-                          onClick={() => handleDeleteUser()}
-                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={deleteUserMutation.isPending}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg
                             className="h-4 w-4"
@@ -330,8 +367,8 @@ export default function UsersTable() {
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 overflow-hidden rounded-full">
                 <Image
-                  src={selectedUser.avatar}
-                  alt={selectedUser.name}
+                  src={selectedUser.avatar || defaultAvatar}
+                  alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
                   width={64}
                   height={64}
                   className="h-full w-full object-cover"
@@ -395,10 +432,10 @@ export default function UsersTable() {
                   <Label>First Name</Label>
                   <Input
                     type="text"
-                    defaultValue={editFormData.name.split(' ')[0]}
+                    defaultValue={editFormData.firstName}
                     onChange={(e) => setEditFormData({
                       ...editFormData,
-                      name: e.target.value + ' ' + editFormData.name.split(' ').slice(1).join(' ')
+                      firstName: e.target.value
                     })}
                   />
                 </div>
@@ -406,10 +443,10 @@ export default function UsersTable() {
                   <Label>Last Name</Label>
                   <Input
                     type="text"
-                    defaultValue={editFormData.name.split(' ').slice(1).join(' ')}
+                    defaultValue={editFormData.lastName}
                     onChange={(e) => setEditFormData({
                       ...editFormData,
-                      name: editFormData.name.split(' ')[0] + ' ' + e.target.value
+                      lastName: e.target.value
                     })}
                   />
                 </div>
@@ -428,7 +465,7 @@ export default function UsersTable() {
                   <Label>Phone</Label>
                   <Input
                     type="text"
-                    defaultValue={editFormData.phone}
+                    defaultValue={editFormData.phone || ''}
                     onChange={(e) => setEditFormData({
                       ...editFormData,
                       phone: e.target.value
@@ -486,6 +523,14 @@ export default function UsersTable() {
           </div>
         )}
       </Modal>
+
+      {/* User Profile Modal - Shows real API data */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        userEmail={selectedUserEmail}
+        userName={selectedUser?.name}
+      />
     </div>
   );
 }

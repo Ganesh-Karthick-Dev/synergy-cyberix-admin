@@ -4,10 +4,12 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { showToast } from "@/utils/toast";
 import { useRouter } from "next/navigation";
+import { useLogout } from "@/hooks/api/useAuth";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const logoutMutation = useLogout();
 
 function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
   e.stopPropagation();
@@ -18,15 +20,18 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     setIsOpen(false);
   }
 
-  const handleLogout = () => {
-    // Clear authentication state
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("user");
-    
-    showToast.logout("Logged out successfully from security dashboard");
-    setTimeout(() => {
+  const handleLogout = async () => {
+    try {
+      // Call the logout API to properly clear server-side session
+      await logoutMutation.mutateAsync();
+      
+      // Redirect to signin page
       router.push("/signin");
-    }, 1500);
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      // Even if logout fails, redirect to login for security
+      router.push("/signin");
+    }
   };
   return (
     <div className="relative">
@@ -153,7 +158,8 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         </ul>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full"
+          disabled={logoutMutation.isPending}
+          className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
             className="fill-gray-500 group-hover:fill-gray-700 dark:group-hover:fill-gray-300"
@@ -170,7 +176,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
               fill=""
             />
           </svg>
-          Sign out
+          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
         </button>
       </Dropdown>
     </div>

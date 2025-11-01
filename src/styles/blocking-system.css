@@ -1,0 +1,290 @@
+/* Login Blocking System Styles */
+
+/* Block warning styles */
+.block-warning {
+  background-color: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #e65100;
+}
+
+.block-warning h3 {
+  margin: 0 0 10px 0;
+  color: #d84315;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.block-warning p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* Attempts warning styles */
+.attempts-warning {
+  background-color: #fff8e1;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #f57c00;
+}
+
+.attempts-warning p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Countdown timer styles */
+.countdown-timer {
+  font-size: 18px;
+  font-weight: bold;
+  color: #d32f2f;
+  text-align: center;
+  margin: 10px 0;
+  padding: 12px;
+  background-color: #ffebee;
+  border-radius: 8px;
+  border: 1px solid #ffcdd2;
+}
+
+/* Disabled form styles */
+.form-group input.disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Login info styles */
+.login-info {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.login-info h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-info ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.login-info li {
+  margin: 6px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Error message styles */
+.error-message {
+  color: #d32f2f;
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Success message styles */
+.success-message {
+  color: #2e7d32;
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #e8f5e8;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Admin status indicators */
+.admin-status-authorized {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-status-unauthorized {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Security features list */
+.security-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.security-features .feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.security-features .feature-item .check-icon {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+/* Test credentials display */
+.test-credentials {
+  background-color: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.test-credentials h4 {
+  margin: 0 0 8px 0;
+  color: #1976d2;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.test-credentials .credential-item {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.test-credentials .credential-item strong {
+  color: #0d47a1;
+}
+
+/* Email notifications info */
+.email-notifications {
+  background-color: #f3e5f5;
+  border: 1px solid #ce93d8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.email-notifications h4 {
+  margin: 0 0 8px 0;
+  color: #7b1fa2;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.email-notifications .notification-item {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #7b1fa2;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .block-warning,
+  .attempts-warning,
+  .login-info {
+    padding: 12px;
+  }
+  
+  .countdown-timer {
+    font-size: 16px;
+    padding: 10px;
+  }
+  
+  .test-credentials,
+  .email-notifications {
+    padding: 10px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .block-warning {
+    background-color: #2d1b00;
+    border-color: #ff9800;
+    color: #ffb74d;
+  }
+  
+  .block-warning h3 {
+    color: #ff9800;
+  }
+  
+  .attempts-warning {
+    background-color: #2d2a00;
+    border-color: #ffc107;
+    color: #ffc107;
+  }
+  
+  .countdown-timer {
+    background-color: #2d0000;
+    border-color: #f44336;
+    color: #f44336;
+  }
+  
+  .login-info {
+    background-color: #2d2d2d;
+    border-color: #404040;
+  }
+  
+  .login-info h3 {
+    color: #e0e0e0;
+  }
+  
+  .login-info li {
+    color: #b0b0b0;
+  }
+  
+  .test-credentials {
+    background-color: #001a2d;
+    border-color: #1976d2;
+  }
+  
+  .test-credentials h4 {
+    color: #64b5f6;
+  }
+  
+  .test-credentials .credential-item {
+    color: #64b5f6;
+  }
+  
+  .test-credentials .credential-item strong {
+    color: #90caf9;
+  }
+  
+  .email-notifications {
+    background-color: #2d002d;
+    border-color: #7b1fa2;
+  }
+  
+  .email-notifications h4 {
+    color: #ba68c8;
+  }
+  
+  .email-notifications .notification-item {
+    color: #ba68c8;
+  }
+}

@@ -7,7 +7,7 @@ export const userKeys = {
   lists: () => [...userKeys.all, 'list'] as const,
   list: (params?: any) => [...userKeys.lists(), params] as const,
   details: () => [...userKeys.all, 'detail'] as const,
-  detail: (id: number) => [...userKeys.details(), id] as const,
+  detail: (id: string) => [...userKeys.details(), id] as const,
   stats: () => [...userKeys.all, 'stats'] as const,
 };
 
@@ -21,12 +21,12 @@ export const useUsers = (params?: {
   return useQuery({
     queryKey: userKeys.list(params),
     queryFn: () => userApi.getUsers(params),
-    select: (response) => response.data,
+    select: (response) => response.data.data, // Extract the PaginatedResponse<User> from ApiResponse
   });
 };
 
 // Get user by ID
-export const useUser = (id: number) => {
+export const useUser = (id: string) => {
   return useQuery({
     queryKey: userKeys.detail(id),
     queryFn: () => userApi.getUserById(id),
@@ -49,7 +49,7 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<User> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
       userApi.updateUser(id, data),
     onSuccess: (response, { id }) => {
       // Update the user in cache
@@ -65,7 +65,7 @@ export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
       userApi.updateUserStatus(id, status),
     onSuccess: (response, { id }) => {
       // Update the user in cache
@@ -84,7 +84,7 @@ export const useDeleteUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => userApi.deleteUser(id),
+    mutationFn: (id: string) => userApi.deleteUser(id),
     onSuccess: (_, id) => {
       // Remove user from cache
       queryClient.removeQueries({ queryKey: userKeys.detail(id) });

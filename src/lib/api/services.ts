@@ -15,20 +15,26 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// User Management Types
+// User Management Types - Updated to match your database schema
 export interface User {
-  id: number;
-  name: string;
+  id: string; // UUID format
   email: string;
-  company: string;
-  plan: string;
-  status: 'Active' | 'Inactive' | 'Trial' | 'Expired';
-  lastScan: string;
-  scansCompleted: number;
-  avatar?: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
+  username?: string | null;
+  firstName: string;
+  lastName: string;
+  avatar?: string | null;
+  phone?: string | null;
+  role: 'USER' | 'ADMIN';
+  status: 'ACTIVE' | 'INACTIVE';
+  emailVerified: boolean;
+  // Additional fields for display purposes
+  name?: string; // Computed from firstName + lastName
+  company?: string; // For display compatibility
+  plan?: string; // For display compatibility
+  lastScan?: string; // For display compatibility
+  scansCompleted?: number; // For display compatibility
+  location?: string; // For display compatibility
+  bio?: string; // For display compatibility
 }
 
 export interface UserStats {
@@ -129,6 +135,7 @@ export interface NotificationStats {
 export interface LoginRequest {
   email: string;
   password: string;
+  deviceInfo?: string;
 }
 
 export interface RegisterRequest {
@@ -140,18 +147,108 @@ export interface RegisterRequest {
 }
 
 export interface AuthUser {
-  id: number;
-  firstName: string;
-  lastName: string;
+  id: string;
   email: string;
-  subscriptionType: string;
+  role: string;
+  isActive: boolean;
+  firstName?: string;
+  lastName?: string;
+  subscriptionType?: string;
   status?: string;
+  phone?: string;
+  bio?: string;
+  location?: string;
+}
+
+export interface LoginLog {
+  id: string;
+  userId: string;
+  email: string;
+  success: boolean;
+  ipAddress: string;
+  userAgent: string;
+  reason?: string;
+  createdAt: string;
+  singleDeviceEnforced: boolean;
+  isLoginAttempt: boolean;
+  isSingleDeviceBlock: boolean;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export interface LoginLogsResponse {
+  logs: LoginLog[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  singleDeviceEnforced: boolean;
+  message: string;
+}
+
+export interface SessionStatus {
+  singleDeviceEnforced: boolean;
+  activeSessions: number;
+  currentSession: {
+    deviceInfo: string;
+    ipAddress: string;
+    userAgent: string;
+    loginTime: string;
+    expiresAt: string;
+  };
+  message: string;
 }
 
 export interface AuthResponse {
   user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
+  message: string;
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+  data: {
+    singleDeviceEnforced: boolean;
+    message: string;
+    previousSessionsCount?: number;
+  };
+}
+
+export interface ApiError {
+  message: string;
+  statusCode: number;
+  code?: string;
+  details?: {
+    existingDevice?: string;
+    existingIp?: string;
+    existingLoginTime?: string;
+    attempts?: number;
+    remainingAttempts?: number;
+    remainingMinutes?: number;
+  };
+}
+
+// Block Status Types
+export interface BlockStatus {
+  email: string;
+  isBlocked: boolean;
+  attempts: number;
+  blockedAt?: string;
+  expiresAt?: string;
+  remainingMinutes?: number;
+  message: string;
+}
+
+export interface BlockStatusResponse {
+  success: boolean;
+  data: BlockStatus;
+  message: string;
 }
 
 // Dashboard Types
@@ -325,14 +422,41 @@ export const authApi = {
     apiClient.post<ApiResponse<AuthResponse>>('/api/auth/login', data),
 
   // User logout
-  logout: () => apiClient.post<ApiResponse<{ message: string }>>('/api/auth/logout'),
+  logout: () => apiClient.post<LogoutResponse>('/api/auth/logout'),
+
+  // Force logout from all devices
+  logoutAll: () => apiClient.post<LogoutResponse>('/api/auth/logout-all'),
+
+  // Get session status
+  getSessionStatus: () => apiClient.get<ApiResponse<SessionStatus>>('/api/auth/session-status'),
 
   // Get user profile
   getProfile: () => apiClient.get<ApiResponse<AuthUser>>('/api/auth/profile'),
 
+  // Get login logs with pagination
+  getLoginLogs: (params?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+  }) => apiClient.get<ApiResponse<LoginLogsResponse>>('/api/auth/login-logs', { params }),
+
+  // Clear login logs
+  clearLoginLogs: () => apiClient.delete<ApiResponse<{ message: string }>>('/api/auth/login-logs'),
+
+  // Admin force logout user
+  forceLogoutUser: (userId: string, reason?: string) => 
+    apiClient.post<ApiResponse<{ message: string }>>(`/api/auth/force-logout/${userId}`, { reason }),
+
   // Refresh token
-  refreshToken: (refreshToken: string) => 
-    apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/api/auth/refresh', { refreshToken }),
+  refreshToken: () => apiClient.post<ApiResponse<{ message: string }>>('/api/auth/refresh'),
+
+  // Check block status for an email
+  checkBlockStatus: (email: string) => 
+    apiClient.get<BlockStatusResponse>(`/api/auth/block-status/${email}`),
+
+  // Get public profile data (no authentication required)
+  getPublicProfile: (email: string) => 
+    apiClient.get<ApiResponse<any>>(`/api/auth/profile/public?email=${encodeURIComponent(email)}`),
 };
 
 // 7. DASHBOARD APIs

@@ -3,9 +3,16 @@ export const ENV_CONFIG = {
   // API Base URL - Change this to your actual API server
   API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000',
   
+  // Application Mode - development or production
+  APP_MODE: process.env.NEXT_PUBLIC_APP_MODE || 'development',
+  
   // Development settings
   IS_DEVELOPMENT: process.env.NODE_ENV === 'development',
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
+  
+  // Mode-specific settings
+  IS_DEV_MODE: (process.env.NEXT_PUBLIC_APP_MODE || 'development') === 'development',
+  IS_PROD_MODE: (process.env.NEXT_PUBLIC_APP_MODE || 'development') === 'production',
   
   // API Timeout settings
   API_TIMEOUT: 30000, // 30 seconds

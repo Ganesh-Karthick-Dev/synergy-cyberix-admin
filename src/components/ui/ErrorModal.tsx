@@ -2,6 +2,9 @@
 import React from 'react';
 import { Modal } from './modal';
 import Button from './button/Button';
+import { useForceLogout } from '@/hooks/api/useForceLogout';
+import { useClearLoginLogs } from '@/hooks/api/useLoginLogs';
+import { showToast } from '@/utils/toast';
 
 interface ErrorModalProps {
   isOpen: boolean;
@@ -22,6 +25,28 @@ export default function ErrorModal({
   onRetry, 
   onContactSupport 
 }: ErrorModalProps) {
+  const forceLogoutMutation = useForceLogout();
+  const clearLogsMutation = useClearLoginLogs();
+
+  const handleForceLogout = async () => {
+    try {
+      await forceLogoutMutation.mutateAsync();
+      showToast.success('Logged out from all devices successfully. You can now login.');
+      onClose();
+    } catch (error) {
+      showToast.error('Failed to logout from all devices. Please try again.');
+    }
+  };
+
+  const handleClearLoginLogs = async () => {
+    try {
+      await clearLogsMutation.mutateAsync();
+      showToast.success('Login logs cleared successfully. You can now try logging in again.');
+      onClose();
+    } catch (error) {
+      showToast.error('Failed to clear login logs. Please try again.');
+    }
+  };
   const getErrorIcon = (code: string) => {
     switch (code) {
       case 'USER_ALREADY_LOGGED_IN':
@@ -56,7 +81,7 @@ export default function ErrorModal({
     switch (code) {
       case 'USER_ALREADY_LOGGED_IN':
         return {
-          primary: 'Your account is currently being used on another device or browser.',
+          primary: message || 'Your account is currently being used on another device or browser.',
           secondary: 'For security reasons, only one active session is allowed per account.',
           solution: 'Please logout from other devices or contact support if you need assistance.'
         };
@@ -69,10 +94,23 @@ export default function ErrorModal({
     }
   };
 
+  const getDeviceInfo = (error: any) => {
+    if (error.code === 'USER_ALREADY_LOGGED_IN' && error.details) {
+      return {
+        device: error.details.existingDevice || 'Unknown Device',
+        ip: error.details.existingIp || 'Unknown IP',
+        loginTime: error.details.existingLoginTime ? 
+          new Date(error.details.existingLoginTime).toLocaleString() : 'Unknown Time'
+      };
+    }
+    return null;
+  };
+
   const errorInfo = getErrorDescription(error.code, error.message);
+  const deviceInfo = getDeviceInfo(error);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-md">
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg">
       <div className="p-6">
         {/* Error Icon */}
         {getErrorIcon(error.code)}
@@ -87,6 +125,20 @@ export default function ErrorModal({
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {errorInfo.primary}
             </p>
+            
+            {/* Device Information for USER_ALREADY_LOGGED_IN */}
+            {deviceInfo && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 text-left">
+                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                  Current Active Session:
+                </h4>
+                <div className="space-y-1 text-xs text-red-700 dark:text-red-300">
+                  <div><strong>Device:</strong> {deviceInfo.device}</div>
+                  <div><strong>IP Address:</strong> {deviceInfo.ip}</div>
+                  <div><strong>Login Time:</strong> {deviceInfo.loginTime}</div>
+                </div>
+              </div>
+            )}
             
             <p className="text-xs text-gray-500 dark:text-gray-500">
               {errorInfo.secondary}
@@ -108,10 +160,32 @@ export default function ErrorModal({
             onClick={onClose}
             className="w-full sm:w-auto"
           >
-            Close
+            Cancel
           </Button>
           
-          {onRetry && (
+          {error.code === 'USER_ALREADY_LOGGED_IN' && (
+            <>
+              <Button
+                size="sm"
+                onClick={handleForceLogout}
+                disabled={forceLogoutMutation.isPending}
+                className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
+              >
+                {forceLogoutMutation.isPending ? 'Logging out...' : 'Logout from All Devices'}
+              </Button>
+              
+              <Button
+                size="sm"
+                onClick={handleClearLoginLogs}
+                disabled={clearLogsMutation.isPending}
+                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {clearLogsMutation.isPending ? 'Clearing...' : 'Clear Login Logs'}
+              </Button>
+            </>
+          )}
+          
+          {onRetry && error.code !== 'USER_ALREADY_LOGGED_IN' && (
             <Button
               size="sm"
               onClick={onRetry}

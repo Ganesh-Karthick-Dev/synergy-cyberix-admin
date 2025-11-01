@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi, LoginRequest, RegisterRequest, AuthUser, AuthResponse } from '@/lib/api/services';
 import { useApiErrorHandler } from '../useApiErrorHandler';
+import { showToast } from '@/utils/toast';
 
 // Query Keys
 export const authKeys = {
@@ -64,11 +65,15 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: () => authApi.logout(),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Logout successful:', data);
+      
       // Clear tokens from localStorage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('user');
       }
       
       // Note: Your backend should clear httpOnly cookies on logout
@@ -76,6 +81,27 @@ export const useLogout = () => {
       
       // Clear all cached data
       queryClient.clear();
+      
+      // Show success message
+      if (data?.message) {
+        showToast.success(data.message);
+      }
+    },
+    onError: (error: any) => {
+      console.error('❌ Logout error:', error);
+      
+      // Even if logout fails on server, clear local data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('user');
+      }
+      queryClient.clear();
+      
+      // Show error message
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Logout failed';
+      showToast.error(errorMessage);
     },
   });
 };
