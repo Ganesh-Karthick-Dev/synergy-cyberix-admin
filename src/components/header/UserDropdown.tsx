@@ -22,13 +22,23 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
 
   const handleLogout = async () => {
     try {
+      // Clear cookies immediately on client side
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
       // Call the logout API to properly clear server-side session
       await logoutMutation.mutateAsync();
-      
+
       // Redirect to signin page
       router.push("/signin");
     } catch (error: any) {
       console.error('Logout error:', error);
+      // Even if logout fails, clear cookies and redirect
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
       // Even if logout fails, redirect to login for security
       router.push("/signin");
     }

@@ -12,11 +12,11 @@ export const useBlockStatus = (email: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: blockStatusKeys.byEmail(email),
     queryFn: () => authApi.checkBlockStatus(email),
-    enabled: enabled && !!email,
+    enabled: enabled && !!email && email.includes('@'), // Only check if email contains @ (valid email format)
     select: (response) => response.data,
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: enabled ? 30 * 1000 : false, // Only refetch in production mode
-    refetchIntervalInBackground: enabled,
+    refetchInterval: false, // Don't auto-refetch - only check when explicitly enabled
+    refetchIntervalInBackground: false,
   });
 };
 

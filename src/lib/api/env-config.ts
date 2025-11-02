@@ -1,7 +1,7 @@
 // Environment Configuration for API Integration
 export const ENV_CONFIG = {
   // API Base URL - Change this to your actual API server
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000',
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   
   // Application Mode - development or production
   APP_MODE: process.env.NEXT_PUBLIC_APP_MODE || 'development',

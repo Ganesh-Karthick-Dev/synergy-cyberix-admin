@@ -50,23 +50,12 @@ export const useErrorHandler = () => {
 
     // Show appropriate error handling based on error type
     switch (errorInfo.statusCode) {
-      case 409:
-        if (errorInfo.code === 'USER_ALREADY_LOGGED_IN') {
-          // Show professional modal for this specific error
-          setErrorState({
-            isErrorModalOpen: true,
-            currentError: errorInfo
-          });
-          return;
-        }
-        break;
-      
       case 401:
         // Unauthorized - redirect to login
         showToast.error('Session expired. Please login again.');
-        setTimeout(() => {
-          window.location.href = '/signin';
-        }, 2000);
+        // setTimeout(() => {
+        //   window.location.href = '/signin';
+        // }, 2000);
         return;
       
       case 403:

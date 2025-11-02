@@ -23,12 +23,21 @@ export default function LogoutButton({
 
   const handleLogout = async () => {
     try {
+      // Clear cookies immediately on client side
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
       await logoutMutation.mutateAsync();
       showToast.success('Logged out successfully!');
       router.push('/signin');
     } catch (error: any) {
       console.error('Logout error:', error);
-      // Even if logout fails, redirect to login
+      // Even if logout fails, clear cookies and redirect
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
       showToast.error('Logout failed, but redirecting to login...');
       router.push('/signin');
     }

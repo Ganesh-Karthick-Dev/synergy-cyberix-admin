@@ -169,9 +169,7 @@ export interface LoginLog {
   userAgent: string;
   reason?: string;
   createdAt: string;
-  singleDeviceEnforced: boolean;
   isLoginAttempt: boolean;
-  isSingleDeviceBlock: boolean;
   user: {
     id: string;
     email: string;
@@ -188,20 +186,18 @@ export interface LoginLogsResponse {
     total: number;
     totalPages: number;
   };
-  singleDeviceEnforced: boolean;
   message: string;
 }
 
 export interface SessionStatus {
-  singleDeviceEnforced: boolean;
   activeSessions: number;
-  currentSession: {
+  sessions: Array<{
     deviceInfo: string;
     ipAddress: string;
     userAgent: string;
     loginTime: string;
     expiresAt: string;
-  };
+  }>;
   message: string;
 }
 
@@ -213,9 +209,7 @@ export interface AuthResponse {
 export interface LogoutResponse {
   success: boolean;
   message: string;
-  data: {
-    singleDeviceEnforced: boolean;
-    message: string;
+  data?: {
     previousSessionsCount?: number;
   };
 }
@@ -413,50 +407,14 @@ export const notificationsApi = {
 
 // 6. AUTHENTICATION APIs
 export const authApi = {
-  // User registration
-  register: (data: RegisterRequest) => 
-    apiClient.post<ApiResponse<{ user: AuthUser; message: string }>>('/api/register', data),
+  // User login - backend sets cookies automatically
+  login: (data: LoginRequest) => apiClient.post('/api/auth/login', data),
 
-  // User login
-  login: (data: LoginRequest) => 
-    apiClient.post<ApiResponse<AuthResponse>>('/api/auth/login', data),
+  // User logout - backend clears cookies automatically
+  logout: () => apiClient.post('/api/auth/logout'),
 
-  // User logout
-  logout: () => apiClient.post<LogoutResponse>('/api/auth/logout'),
-
-  // Force logout from all devices
-  logoutAll: () => apiClient.post<LogoutResponse>('/api/auth/logout-all'),
-
-  // Get session status
-  getSessionStatus: () => apiClient.get<ApiResponse<SessionStatus>>('/api/auth/session-status'),
-
-  // Get user profile
-  getProfile: () => apiClient.get<ApiResponse<AuthUser>>('/api/auth/profile'),
-
-  // Get login logs with pagination
-  getLoginLogs: (params?: {
-    page?: number;
-    limit?: number;
-    userId?: string;
-  }) => apiClient.get<ApiResponse<LoginLogsResponse>>('/api/auth/login-logs', { params }),
-
-  // Clear login logs
-  clearLoginLogs: () => apiClient.delete<ApiResponse<{ message: string }>>('/api/auth/login-logs'),
-
-  // Admin force logout user
-  forceLogoutUser: (userId: string, reason?: string) => 
-    apiClient.post<ApiResponse<{ message: string }>>(`/api/auth/force-logout/${userId}`, { reason }),
-
-  // Refresh token
-  refreshToken: () => apiClient.post<ApiResponse<{ message: string }>>('/api/auth/refresh'),
-
-  // Check block status for an email
-  checkBlockStatus: (email: string) => 
-    apiClient.get<BlockStatusResponse>(`/api/auth/block-status/${email}`),
-
-  // Get public profile data (no authentication required)
-  getPublicProfile: (email: string) => 
-    apiClient.get<ApiResponse<any>>(`/api/auth/profile/public?email=${encodeURIComponent(email)}`),
+  // Get user profile - requires authentication via cookies
+  getProfile: () => apiClient.get('/api/auth/profile'),
 };
 
 // 7. DASHBOARD APIs

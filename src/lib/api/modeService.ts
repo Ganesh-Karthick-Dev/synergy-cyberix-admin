@@ -69,10 +69,6 @@ class ModeService {
     return this.isProductionMode();
   }
 
-  // Check if single device login should be enforced
-  shouldEnforceSingleDevice(): boolean {
-    return this.isProductionMode();
-  }
 
   // Get mode-specific error messages
   getModeSpecificMessage(feature: string): string {

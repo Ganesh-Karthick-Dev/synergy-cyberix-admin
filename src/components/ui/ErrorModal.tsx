@@ -49,14 +49,6 @@ export default function ErrorModal({
   };
   const getErrorIcon = (code: string) => {
     switch (code) {
-      case 'USER_ALREADY_LOGGED_IN':
-        return (
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-            <svg className="h-8 w-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-        );
       default:
         return (
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
@@ -69,40 +61,18 @@ export default function ErrorModal({
   };
 
   const getErrorTitle = (code: string) => {
-    switch (code) {
-      case 'USER_ALREADY_LOGGED_IN':
-        return 'Account Already in Use';
-      default:
-        return 'Authentication Error';
-    }
+    return 'Authentication Error';
   };
 
   const getErrorDescription = (code: string, message: string) => {
-    switch (code) {
-      case 'USER_ALREADY_LOGGED_IN':
-        return {
-          primary: message || 'Your account is currently being used on another device or browser.',
-          secondary: 'For security reasons, only one active session is allowed per account.',
-          solution: 'Please logout from other devices or contact support if you need assistance.'
-        };
-      default:
-        return {
-          primary: message,
-          secondary: 'Please try again or contact support if the problem persists.',
-          solution: 'If this issue continues, please contact our support team.'
-        };
-    }
+    return {
+      primary: message,
+      secondary: 'Please try again or contact support if the problem persists.',
+      solution: 'If this issue continues, please contact our support team.'
+    };
   };
 
   const getDeviceInfo = (error: any) => {
-    if (error.code === 'USER_ALREADY_LOGGED_IN' && error.details) {
-      return {
-        device: error.details.existingDevice || 'Unknown Device',
-        ip: error.details.existingIp || 'Unknown IP',
-        loginTime: error.details.existingLoginTime ? 
-          new Date(error.details.existingLoginTime).toLocaleString() : 'Unknown Time'
-      };
-    }
     return null;
   };
 
@@ -125,20 +95,6 @@ export default function ErrorModal({
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {errorInfo.primary}
             </p>
-            
-            {/* Device Information for USER_ALREADY_LOGGED_IN */}
-            {deviceInfo && (
-              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 text-left">
-                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
-                  Current Active Session:
-                </h4>
-                <div className="space-y-1 text-xs text-red-700 dark:text-red-300">
-                  <div><strong>Device:</strong> {deviceInfo.device}</div>
-                  <div><strong>IP Address:</strong> {deviceInfo.ip}</div>
-                  <div><strong>Login Time:</strong> {deviceInfo.loginTime}</div>
-                </div>
-              </div>
-            )}
             
             <p className="text-xs text-gray-500 dark:text-gray-500">
               {errorInfo.secondary}
@@ -163,29 +119,7 @@ export default function ErrorModal({
             Cancel
           </Button>
           
-          {error.code === 'USER_ALREADY_LOGGED_IN' && (
-            <>
-              <Button
-                size="sm"
-                onClick={handleForceLogout}
-                disabled={forceLogoutMutation.isPending}
-                className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
-              >
-                {forceLogoutMutation.isPending ? 'Logging out...' : 'Logout from All Devices'}
-              </Button>
-              
-              <Button
-                size="sm"
-                onClick={handleClearLoginLogs}
-                disabled={clearLogsMutation.isPending}
-                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                {clearLogsMutation.isPending ? 'Clearing...' : 'Clear Login Logs'}
-              </Button>
-            </>
-          )}
-          
-          {onRetry && error.code !== 'USER_ALREADY_LOGGED_IN' && (
+          {onRetry && (
             <Button
               size="sm"
               onClick={onRetry}

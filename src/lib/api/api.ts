@@ -11,7 +11,7 @@ console.log('🔧 Environment API URL:', process.env.NEXT_PUBLIC_API_URL);
 
 // Create Axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL, // Call backend directly
   timeout: 30000,
   withCredentials: true, // Enable cookies for cross-origin requests
   headers: {
@@ -19,41 +19,45 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+console.log('🔧 [API Client] Configuration:', {
+  apiBaseURL: API_BASE_URL,
+  note: 'Direct calls to backend with cookies',
+});
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // For logout endpoints, don't use Authorization header - rely on cookies
-    const isLogoutEndpoint = config.url?.includes('/logout');
-    
-    if (!isLogoutEndpoint) {
-      // Get token from localStorage (for Authorization header)
-      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    
+    // Backend handles authentication via cookies
     // Ensure cookies are sent with requests
     config.withCredentials = true;
-    
+
     // Log request in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        data: config.data,
-        params: config.params,
-        headers: config.headers,
-        withCredentials: config.withCredentials,
-        isLogoutEndpoint,
-      });
+      console.log(`🚀 [API] ${config.method?.toUpperCase()} ${config.url}`);
+
+      // Log cookies that will be sent
+      if (typeof document !== 'undefined') {
+        const allCookies = document.cookie;
+        const cookieList = allCookies.split(';').map(c => c.trim()).filter(c => c);
+        console.log(`🚀 [API] Cookies: ${cookieList.length} found, has accessToken: ${allCookies.includes('accessToken')}`);
+      }
     }
-    
+
     return config;
   },
-  (error) => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
-  }
+    (error) => {
+      console.error('❌ [Frontend API] Request Interceptor Error:', error);
+      
+      // Check for connection errors
+      if (error.code === 'ECONNREFUSED' || error.message?.includes('ERR_CONNECTION_REFUSED')) {
+        console.error('❌ [Frontend API] ===== CONNECTION REFUSED =====');
+        console.error('❌ [Frontend API] Backend server appears to be down or unreachable');
+        console.error('❌ [Frontend API] API Base URL:', API_BASE_URL);
+        console.error('❌ [Frontend API] Please ensure backend server is running on:', API_BASE_URL);
+      }
+      
+      return Promise.reject(error);
+    }
 );
 
 // Response interceptor
@@ -61,80 +65,18 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log response in development
     if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-        status: response.status,
-        data: response.data,
-      });
+      console.log(`✅ [API] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
     }
-    
+
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-    
     // Log error in development
     if (process.env.NODE_ENV === 'development') {
-      console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
+      console.error(`❌ [API] ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${error.response?.status}: ${error.response?.data?.error?.message || error.message}`);
     }
-    
-    // Handle 401 Unauthorized - Token expired
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-        
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
-            refreshToken,
-          });
-          
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          
-          // Update tokens in localStorage
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
-          
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return apiClient(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/signin';
-        }
-      }
-    }
-    
-    // Handle other errors
-    const errorMessage = error.response?.data?.error?.message || error.message || 'An error occurred';
-    const statusCode = error.response?.status || 500;
-    
-    // Log error for debugging
-    console.error('API Error:', {
-      message: errorMessage,
-      status: statusCode,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method
-    });
-    
-    return Promise.reject({
-      message: errorMessage,
-      status: statusCode,
-      data: error.response?.data,
-      response: error.response,
-      config: error.config
-    });
+
+    return Promise.reject(error);
   }
 );
 

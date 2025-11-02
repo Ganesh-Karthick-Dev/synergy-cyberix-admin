@@ -18,9 +18,8 @@ export const useForceLogout = () => {
     onSuccess: (data) => {
       console.log('✅ Force logout successful:', data);
       // Clear all local storage
+      // Note: Backend clears httpOnly cookies automatically
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('user');
       }

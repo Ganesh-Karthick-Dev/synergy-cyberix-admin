@@ -72,7 +72,6 @@ export default function AdminDashboard() {
             <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
               <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">🔒 Login Security</h4>
               <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
-                <div>✅ Single device login enforcement</div>
                 <div>✅ Account blocking after 3 failed attempts</div>
                 <div>✅ 5-minute block duration</div>
                 <div>✅ Real-time attempt tracking</div>

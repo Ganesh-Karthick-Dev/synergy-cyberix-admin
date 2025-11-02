@@ -5,12 +5,8 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState } from "react";
 import { showToast } from "@/utils/toast";
-import { useLogin } from "@/hooks/api/useAuth";
-import { useApiErrorHandler } from "@/hooks/useApiErrorHandler";
-import { useIsEmailBlocked } from "@/hooks/api/useBlockStatus";
 import { ENV_CONFIG } from "@/lib/api/env-config";
 
 export default function SignInForm() {
@@ -18,147 +14,56 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [countdown, setCountdown] = useState(0);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const loginMutation = useLogin();
-  const { handleError } = useApiErrorHandler();
-
-  // Get redirect URL from query params
-  const redirectUrl = searchParams.get('redirect') || '/';
-  const errorFromQuery = searchParams.get('error');
-
-  // Handle error from query params (Google OAuth errors)
-  useEffect(() => {
-    if (errorFromQuery) {
-      showToast.error(decodeURIComponent(errorFromQuery));
-      // Clean up URL
-      router.replace('/login', { scroll: false });
-    }
-  }, [errorFromQuery, router]);
 
   // Handle Google login
   const handleGoogleLogin = () => {
     const apiBaseUrl = ENV_CONFIG.API_BASE_URL;
     const googleLoginUrl = `${apiBaseUrl}/api/auth/google`;
-    const redirectParam = redirectUrl !== '/' ? `?redirect=${encodeURIComponent(redirectUrl)}` : '';
-    window.location.href = `${googleLoginUrl}${redirectParam}`;
+    window.location.href = `${googleLoginUrl}`;
   };
-
-  // Check block status for the email
-  const { 
-    isBlocked, 
-    attempts, 
-    remainingMinutes, 
-    blockedAt, 
-    expiresAt, 
-    isLoading: isLoadingBlockStatus 
-  } = useIsEmailBlocked(email, true);
-
-  // Countdown timer for blocked accounts
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isBlocked && remainingMinutes > 0) {
-      setCountdown(remainingMinutes * 60); // Convert to seconds
-      timer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      setCountdown(0);
-    }
-    return () => clearInterval(timer);
-  }, [isBlocked, remainingMinutes]);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const attemptsRemaining = 3 - attempts;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       showToast.error("Please enter both email and password");
       return;
     }
 
-    // Prevent submission if account is blocked
-    if (isBlocked) {
-      showToast.error(`Account is blocked. Please try again in ${formatTime(countdown)}`);
-      return;
-    }
-
-    // Show loading toast
     const loadingToast = showToast.loading("Signing in...");
-    
+
     try {
-      // Get device information
-      const deviceInfo = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        timestamp: new Date().toISOString(),
-        screenResolution: `${screen.width}x${screen.height}`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      };
-      
-      // Call the actual API with device info
-      const response = await loginMutation.mutateAsync({
-        email,
-        password,
-        deviceInfo: JSON.stringify(deviceInfo)
+      // Call login API directly
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          password,
+          deviceInfo: JSON.stringify({
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+          })
+        })
       });
-      
-      showToast.dismiss(loadingToast);
-      showToast.success("Login successful! Welcome to the security scanning dashboard.");
-      
-      // Store user data in localStorage
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify(response.data.data.user));
-      
-      // Redirect to the intended page or dashboard
-      router.push(redirectUrl);
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast.dismiss(loadingToast);
+        showToast.success("Login successful!");
+        // Navigate to dashboard
+        window.location.href = '/';
+      } else {
+        throw new Error(data.error?.message || 'Login failed');
+      }
     } catch (error: any) {
       showToast.dismiss(loadingToast);
-      
-      // Handle error types
-      if (error?.response?.status === 409 && error?.response?.data?.error?.code === 'USER_ALREADY_LOGGED_IN') {
-        const structuredError = {
-          response: {
-            status: 409,
-            data: {
-              success: false,
-              error: {
-                message: error.response.data.error.message,
-                statusCode: 409,
-                code: 'USER_ALREADY_LOGGED_IN',
-                details: error.response.data.error.details
-              }
-            }
-          }
-        };
-        handleError(structuredError);
-      } else if (error?.response?.status === 423 && error?.response?.data?.error?.code === 'ACCOUNT_BLOCKED') {
-        const errorData = error.response.data.error;
-        showToast.error(`Account blocked after 3 failed attempts. Please try again in ${errorData.details?.remainingMinutes || 5} minutes.`);
-      } else if (error?.response?.status === 401 && error?.response?.data?.error?.code === 'INVALID_CREDENTIALS') {
-        const errorData = error.response.data.error;
-        const remainingAttempts = errorData.details?.remainingAttempts || 0;
-        showToast.error(`Invalid credentials. ${remainingAttempts} attempts remaining before account is blocked.`);
-      } else if (error?.response?.status === 403 && error?.response?.data?.error?.code === 'ADMIN_ACCESS_DENIED') {
-        showToast.error('Access denied. Admin login is restricted to authorized personnel only.');
-      } else {
-        // Use the error handler for other errors
-        handleError(error);
-      }
+      showToast.error(error.message || 'Login failed');
     }
   };
   return (
@@ -184,7 +89,7 @@ export default function SignInForm() {
           </div>
           <div>
             <div className="w-full">
-              <button 
+              <button
                 onClick={handleGoogleLogin}
                 className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10 w-full"
               >
@@ -214,20 +119,8 @@ export default function SignInForm() {
                 </svg>
                 Sign in with Google
               </button>
-              {/* <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
-                <svg
-                  width="21"
-                  className="fill-current"
-                  height="20"
-                  viewBox="0 0 21 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" />
-                </svg>
-                Sign in with X
-              </button> */}
             </div>
+
             <div className="relative py-3 sm:py-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
@@ -238,52 +131,6 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            {/* Block Status Display */}
-            {isBlocked && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-                    Account Blocked
-                  </h3>
-                </div>
-                <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                  This account is temporarily blocked due to multiple failed login attempts.
-                </p>
-                <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                  Please try again in <strong className="text-red-900 dark:text-red-100">{formatTime(countdown)}</strong>
-                </p>
-                {blockedAt && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    Blocked at: {new Date(blockedAt).toLocaleString()}
-                  </p>
-                )}
-                {expiresAt && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    Expires at: {new Date(expiresAt).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Attempts Remaining Display */}
-            {!isBlocked && attempts > 0 && attemptsRemaining > 0 && (
-              <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                    Warning
-                  </h3>
-                </div>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  ⚠️ {attemptsRemaining} attempts remaining before account is blocked.
-                </p>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
@@ -291,13 +138,11 @@ export default function SignInForm() {
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input 
-                    defaultValue={email}
+                  <Input
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="john.doe@company.com" 
+                    placeholder="Enter your email"
                     type="email"
-                    disabled={isBlocked}
-                    className={isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
                   />
                 </div>
                 <div>
@@ -306,16 +151,14 @@ export default function SignInForm() {
                   </Label>
                   <div className="relative">
                     <Input
-                      defaultValue={password}
+                      value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type={showPassword ? "text" : "password"}
-                      placeholder="password"
-                      disabled={isBlocked}
-                      className={isBlocked ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}
+                      placeholder="Enter your password"
                     />
                     <span
-                      onClick={() => isBlocked ? null : setShowPassword(!showPassword)}
-                      className={`absolute z-30 -translate-y-1/2 right-4 top-1/2 ${isBlocked ? 'cursor-not-allowed text-gray-400' : 'cursor-pointer'}`}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute z-30 -translate-y-1/2 right-4 top-1/2 cursor-pointer"
                     >
                       {showPassword ? (
                         <EyeIcon />
@@ -327,38 +170,44 @@ export default function SignInForm() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Checkbox 
-                      checked={isChecked} 
+                    <Checkbox
+                      checked={isChecked}
                       onChange={setIsChecked}
-                      disabled={isBlocked}
                     />
-                    <span className={`block font-normal text-theme-sm ${isBlocked ? 'text-gray-500 dark:text-gray-400' : 'text-gray-700 dark:text-gray-400'}`}>
+                    <span className="block font-normal text-theme-sm text-gray-700 dark:text-gray-400">
                       Keep me logged in
                     </span>
                   </div>
                   <Link
                     href="/reset-password"
-                    className={`text-sm ${isBlocked ? 'text-gray-400 cursor-not-allowed' : 'text-brand-500 hover:text-brand-600 dark:text-brand-400'}`}
+                    className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div>
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     size="sm"
-                    disabled={loginMutation.isPending || isBlocked}
+                    type="submit"
                   >
-                    {isBlocked
-                      ? `Blocked - Try again in ${formatTime(countdown)}`
-                      : loginMutation.isPending 
-                        ? "Signing in..." 
-                        : "Sign in"
-                    }
+                    Sign in
                   </Button>
                 </div>
               </div>
             </form>
+
+            <div className="mt-5">
+              <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                >
+                  Sign Up
+                </Link>
+              </p>
+            </div>
 
             {/* <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">

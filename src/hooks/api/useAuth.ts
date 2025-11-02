@@ -32,16 +32,9 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
-      const { accessToken, refreshToken } = response.data;
-      
-      // Store tokens in localStorage (for Authorization header)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-      }
-      
-      // Note: Cookies are automatically handled by the browser when withCredentials: true
-      // Your backend should set httpOnly cookies for authentication
+      // Backend handles authentication via cookies only
+      // No tokens in response body, no need to store in localStorage
+      // Cookies are automatically set by backend and sent with subsequent requests
       
       // Set user data in cache
       queryClient.setQueryData(authKeys.profile(), response.data.user);
@@ -68,17 +61,9 @@ export const useLogout = () => {
     onSuccess: (data) => {
       console.log('✅ Logout successful:', data);
       
-      // Clear tokens from localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('user');
-      }
-      
-      // Note: Your backend should clear httpOnly cookies on logout
+      // Backend clears httpOnly cookies automatically on logout
       // The browser will automatically handle cookie clearing when the backend responds
-      
+
       // Clear all cached data
       queryClient.clear();
       
@@ -90,13 +75,7 @@ export const useLogout = () => {
     onError: (error: any) => {
       console.error('❌ Logout error:', error);
       
-      // Even if logout fails on server, clear local data
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('user');
-      }
+      // Even if logout fails on server, backend should still clear cookies
       queryClient.clear();
       
       // Show error message
@@ -107,19 +86,14 @@ export const useLogout = () => {
 };
 
 // Refresh token mutation
+// Note: Backend handles token refresh automatically via cookies
+// This is kept for backward compatibility but tokens are managed by backend
 export const useRefreshToken = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (refreshToken: string) => authApi.refreshToken(refreshToken),
-    onSuccess: (response) => {
-      const { accessToken, refreshToken } = response.data;
-      
-      // Update tokens in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-      }
+    mutationFn: () => authApi.refreshToken(),
+    onSuccess: () => {
+      // Backend refreshes tokens and sets new cookies automatically
+      // No action needed on frontend
     },
   });
 };
