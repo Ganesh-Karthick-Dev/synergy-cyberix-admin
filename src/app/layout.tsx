@@ -9,13 +9,53 @@ import ErrorHandler from '@/components/ErrorHandler';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'CyberScan Pro - Security Scanning Dashboard',
-  description: 'Advanced security scanning dashboard for vulnerability assessment and website security analysis',
+  title: 'Synergy Cyberix Admin - Security Management Dashboard',
+  description: 'Advanced security management dashboard with real-time monitoring, vulnerability assessment, and push notifications',
+  keywords: 'cybersecurity, security dashboard, vulnerability scanning, admin panel, push notifications',
+  authors: [{ name: 'Synergy Cyberix Team' }],
+  creator: 'Synergy Cyberix',
+  publisher: 'Synergy Cyberix',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  manifest: '/manifest.json',
   icons: {
     icon: '/logo/icons8-security-shield-64.png',
     shortcut: '/logo/icons8-security-shield-64.png',
     apple: '/logo/icons8-security-shield-64.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Synergy Cyberix Admin',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://admin.synergycyberix.com',
+    title: 'Synergy Cyberix Admin - Security Management Dashboard',
+    description: 'Advanced security management dashboard with real-time monitoring and push notifications',
+    siteName: 'Synergy Cyberix Admin',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Synergy Cyberix Admin - Security Management Dashboard',
+    description: 'Advanced security management dashboard with real-time monitoring and push notifications',
+    creator: '@synergycyberix',
+  },
+};
+
+// Viewport configuration for Next.js 15+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#3b82f6' },
+    { media: '(prefers-color-scheme: dark)', color: '#1f2937' },
+  ],
 };
 
 const outfit = Outfit({

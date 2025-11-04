@@ -1,0 +1,59 @@
+{
+  "name": "Synergy Cyberix Admin",
+  "short_name": "Cyberix Admin",
+  "description": "Cyber Security Management Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1f2937",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "security"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/logo/icons8-security-shield-64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/security-shield-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Go to main dashboard",
+      "url": "/",
+      "icons": [{ "src": "/logo/icons8-security-shield-64.png", "sizes": "64x64" }]
+    },
+    {
+      "name": "Push Notifications",
+      "short_name": "Notifications",
+      "description": "Manage push notifications",
+      "url": "/push-notifications",
+      "icons": [{ "src": "/logo/icons8-security-shield-64.png", "sizes": "64x64" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshot-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
+
+

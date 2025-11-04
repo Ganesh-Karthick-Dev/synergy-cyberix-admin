@@ -459,6 +459,18 @@ export const healthApi = {
   check: () => apiClient.get<{ status: string; timestamp: string; uptime: number; environment: string }>('/health'),
 };
 
+// 9. FCM (Firebase Cloud Messaging) APIs
+export const fcmApi = {
+  // Store FCM token for push notifications
+  storeToken: (fcmToken: string) => apiClient.post<ApiResponse<{ message: string }>>('/api/fcm/token', { fcmToken }),
+
+  // Remove FCM token
+  removeToken: (fcmToken: string) => apiClient.delete<ApiResponse<{ message: string }>>('/api/fcm/token', { data: { fcmToken } }),
+
+  // Remove all FCM tokens (logout from all devices)
+  removeAllTokens: () => apiClient.delete<ApiResponse<{ message: string }>>('/api/fcm/tokens/all'),
+};
+
 // 10. API INFO
 export const apiInfoApi = {
   // Get API information
