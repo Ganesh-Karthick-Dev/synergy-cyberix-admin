@@ -9,12 +9,12 @@ import ErrorHandler from '@/components/ErrorHandler';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Synergy Cyberix Admin - Security Management Dashboard',
+  title: 'Cyberix Admin - Security Management Dashboard',
   description: 'Advanced security management dashboard with real-time monitoring, vulnerability assessment, and push notifications',
   keywords: 'cybersecurity, security dashboard, vulnerability scanning, admin panel, push notifications',
-  authors: [{ name: 'Synergy Cyberix Team' }],
-  creator: 'Synergy Cyberix',
-  publisher: 'Synergy Cyberix',
+  authors: [{ name: 'Cyberix Team' }],
+  creator: 'Cyberix',
+  publisher: 'Cyberix',
   formatDetection: {
     email: false,
     address: false,

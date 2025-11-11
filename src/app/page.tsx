@@ -36,35 +36,35 @@ export default function RootPage() {
           <AppHeader />
           {/* Page Content */}
           <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
               {/* Ecommerce Metrics */}
-              <div className="xl:col-span-3">
+              <div className="xl:col-span-12">
                 <EcommerceMetrics />
               </div>
 
               {/* Monthly Target */}
-              <div className="xl:col-span-1">
+              <div className="xl:col-span-4">
                 <MonthlyTarget />
               </div>
 
               {/* Monthly Sales Chart */}
-              <div className="xl:col-span-2">
+              <div className="xl:col-span-8">
                 <MonthlySalesChart />
               </div>
 
               {/* Statistics Chart */}
-              <div className="xl:col-span-2">
+              <div className="xl:col-span-12">
                 <StatisticsChart />
               </div>
 
-              {/* Recent Orders */}
-              <div className="xl:col-span-1">
-                <RecentOrders />
+              {/* Demographic Card */}
+              <div className="xl:col-span-5">
+                <DemographicCard />
               </div>
 
-              {/* Demographic Card */}
-              <div className="xl:col-span-3">
-                <DemographicCard />
+              {/* Recent Orders (Scanner Users) */}
+              <div className="xl:col-span-7">
+                <RecentOrders />
               </div>
             </div>
           </div>

@@ -203,11 +203,11 @@ export default function PushNotifications() {
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-title-md2 font-semibold text-black dark:text-white">
           Push Notifications Management
         </h2>
-      </div>
+      </div> */}
 
       <div className="flex flex-col gap-5 md:gap-7 2xl:gap-10">
         {/* Header Actions */}

@@ -7,7 +7,7 @@ export interface ServicePlan {
   price: number;
   description: string;
   features: string[];
-  deliveryDays: number;
+  deliveryDays?: number;
   isPopular: boolean;
   isActive: boolean;
   createdAt: string;
@@ -25,7 +25,6 @@ export interface CreatePlanRequest {
   price: number;
   description: string;
   features: string[];
-  deliveryDays: number;
   isPopular: boolean;
   isActive: boolean;
 }
@@ -35,7 +34,6 @@ export interface UpdatePlanRequest {
   price?: number;
   description?: string;
   features?: string[];
-  deliveryDays?: number;
   isPopular?: boolean;
   isActive?: boolean;
 }

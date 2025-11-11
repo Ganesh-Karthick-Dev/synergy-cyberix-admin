@@ -61,6 +61,7 @@ export default function PlanManagement() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [formData, setFormData] = useState<PlanFormData>(initialFormData);
   const [newFeature, setNewFeature] = useState("");
+  const [priceInputValue, setPriceInputValue] = useState<string>('');
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -68,8 +69,12 @@ export default function PlanManagement() {
       setFormData(initialFormData);
       setEditingPlan(null);
       setNewFeature("");
+      setPriceInputValue('');
+    } else if (editingPlan) {
+      // When editing, set the price input value
+      setPriceInputValue(editingPlan.price.toString());
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, editingPlan]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -206,6 +211,24 @@ export default function PlanManagement() {
       ...formData,
       features: formData.features.filter((_, i) => i !== index)
     });
+  };
+
+  // Handle price input - only allow numbers and decimal point
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty string, numbers, and single decimal point
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setPriceInputValue(value);
+      if (value === '') {
+        setFormData({ ...formData, price: 0 });
+      } else {
+        const numValue = parseFloat(value);
+        // Allow 0 and positive numbers (including decimals)
+        if (!isNaN(numValue) && numValue >= 0) {
+          setFormData({ ...formData, price: numValue });
+        }
+      }
+    }
   };
 
   if (plansLoading) {
@@ -449,14 +472,25 @@ export default function PlanManagement() {
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">$</span>
                   <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    type="text"
+                    value={priceInputValue}
+                    onChange={handlePriceChange}
+                    onKeyDown={(e) => {
+                      // Prevent non-numeric keys except: backspace, delete, tab, escape, enter, decimal point, and arrow keys
+                      const allowedKeys = [
+                        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                        'Home', 'End'
+                      ];
+                      const isNumber = /[0-9]/.test(e.key);
+                      const isDecimal = e.key === '.' && !e.currentTarget.value.includes('.');
+                      if (!isNumber && !isDecimal && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:text-white transition-all"
-                    placeholder="299"
+                    placeholder="0 or 299.99"
                     required
-                    min="0"
-                    step="0.01"
                   />
                 </div>
               </div>

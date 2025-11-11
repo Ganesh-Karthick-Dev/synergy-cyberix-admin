@@ -52,7 +52,17 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
       setShowCreateModal(false);
       toast.success('Plan created successfully!');
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to create plan';
+      const errorData = error?.response?.data?.error;
+      let errorMessage = errorData?.message || error?.message || 'Failed to create plan';
+
+      // Show detailed validation errors if available
+      if (errorData?.details && Array.isArray(errorData.details)) {
+        const fieldErrors = errorData.details.map((detail: any) =>
+          `${detail.field}: ${detail.message}`
+        ).join('\n');
+        errorMessage = `Validation errors:\n${fieldErrors}`;
+      }
+
       toast.error(errorMessage);
     }
   };
@@ -64,7 +74,17 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
       setEditingPlan(null);
       toast.success('Plan updated successfully!');
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to update plan';
+      const errorData = error?.response?.data?.error;
+      let errorMessage = errorData?.message || error?.message || 'Failed to update plan';
+
+      // Show detailed validation errors if available
+      if (errorData?.details && Array.isArray(errorData.details)) {
+        const fieldErrors = errorData.details.map((detail: any) =>
+          `${detail.field}: ${detail.message}`
+        ).join('\n');
+        errorMessage = `Validation errors:\n${fieldErrors}`;
+      }
+
       toast.error(errorMessage);
     }
   };
@@ -228,8 +248,7 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                   </ul>
                 </div>
                 
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span>Delivery: {plan.deliveryDays} days</span>
+                <div className="flex items-center justify-end text-sm text-gray-500 mb-4">
                   <span>Created: {new Date(plan.createdAt).toLocaleDateString()}</span>
                 </div>
                 
@@ -304,10 +323,6 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Delivery Days</label>
-                      <p className="text-sm text-gray-900">{selectedPlan.deliveryDays} days</p>
-                    </div>
-                    <div>
                       <label className="block text-sm font-medium text-gray-700">Status</label>
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -361,7 +376,6 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                   price: Number(formData.get('price')),
                   description: formData.get('description') as string,
                   features: (formData.get('features') as string).split('\n').filter(f => f.trim()),
-                  deliveryDays: Number(formData.get('deliveryDays')),
                   isPopular: formData.get('isPopular') === 'on',
                   isActive: formData.get('isActive') === 'on',
                 };
@@ -404,16 +418,6 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                     defaultValue={Array.isArray(editingPlan.features) ? editingPlan.features.join('\n') : ''}
                     required
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Delivery Days</label>
-                  <input
-                    type="number"
-                    name="deliveryDays"
-                    defaultValue={editingPlan.deliveryDays}
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -475,7 +479,6 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                   price: Number(formData.get('price')),
                   description: formData.get('description') as string,
                   features: (formData.get('features') as string).split('\n').filter(f => f.trim()),
-                  deliveryDays: Number(formData.get('deliveryDays')),
                   isPopular: formData.get('isPopular') === 'on',
                   isActive: formData.get('isActive') === 'on',
                 };
@@ -514,15 +517,6 @@ export const ServicePlans: React.FC<ServicePlansProps> = ({ planId }) => {
                     name="features"
                     required
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Delivery Days</label>
-                  <input
-                    type="number"
-                    name="deliveryDays"
-                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
