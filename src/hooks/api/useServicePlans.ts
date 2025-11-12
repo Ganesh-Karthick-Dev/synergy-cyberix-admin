@@ -6,9 +6,13 @@ import {
   updatePlan,
   deletePlan,
   togglePlanStatus,
+  getSecurityPlanFeatures,
+  getEnabledSecurityTools,
   ServicePlan,
   CreatePlanRequest,
   UpdatePlanRequest,
+  SecurityPlanFeatures,
+  EnabledSecurityTools,
 } from '@/lib/api/service-plans';
 
 // Query Keys for Service Plans
@@ -17,6 +21,8 @@ export const servicePlansKeys = {
   plans: () => [...servicePlansKeys.all, 'plans'] as const,
   plansList: (params?: any) => [...servicePlansKeys.plans(), 'list', params] as const,
   planDetail: (id: string) => [...servicePlansKeys.plans(), 'detail', id] as const,
+  securityFeatures: () => [...servicePlansKeys.all, 'security-features'] as const,
+  enabledSecurityTools: () => [...servicePlansKeys.all, 'enabled-security-tools'] as const,
 };
 
 /**
@@ -165,5 +171,33 @@ export const usePopularPlans = () => {
  */
 export const useInactivePlans = () => {
   return usePlans({ status: 'inactive' });
+};
+
+/**
+ * 3.7 Get Security Plan Features Hook
+ * GET /api/plans/security-features
+ * Returns all active plans with their features for admin management
+ */
+export const useSecurityPlanFeatures = () => {
+  return useQuery({
+    queryKey: servicePlansKeys.securityFeatures(),
+    queryFn: () => getSecurityPlanFeatures(),
+    select: (response) => response.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+/**
+ * 3.8 Get Enabled Security Tools Hook
+ * GET /api/plans/security-tools/enabled
+ * Returns enabled security tools based on active plan features
+ */
+export const useEnabledSecurityTools = () => {
+  return useQuery({
+    queryKey: servicePlansKeys.enabledSecurityTools(),
+    queryFn: () => getEnabledSecurityTools(),
+    select: (response) => response.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 };
 

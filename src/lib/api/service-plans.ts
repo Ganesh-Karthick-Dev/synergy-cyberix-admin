@@ -38,6 +38,24 @@ export interface UpdatePlanRequest {
   isActive?: boolean;
 }
 
+export interface SecurityPlanFeatures {
+  totalPlans: number;
+  features: string[];
+  plans: Array<{
+    id: string;
+    name: string;
+    features: string[];
+    featureCount: number;
+  }>;
+}
+
+export interface EnabledSecurityTools {
+  enabledTools: string[];
+  totalEnabled: number;
+  allTools: string[];
+  enabledFeatures: string[];
+}
+
 // SERVICE PLANS API FUNCTIONS - Exact implementation from documentation
 
 /**
@@ -99,5 +117,25 @@ export const deletePlan = async (id: string): Promise<ApiResponse<void>> => {
  */
 export const togglePlanStatus = async (id: string): Promise<ApiResponse<ServicePlan>> => {
   const response = await apiClient.put(`/api/plans/${id}/toggle-status`);
+  return response.data;
+};
+
+/**
+ * 3.7 Get Security Plan Features
+ * GET /api/plans/security-features
+ * Returns all active plans with their features for admin management
+ */
+export const getSecurityPlanFeatures = async (): Promise<ApiResponse<SecurityPlanFeatures>> => {
+  const response = await apiClient.get('/api/plans/security-features');
+  return response.data;
+};
+
+/**
+ * 3.8 Get Enabled Security Tools
+ * GET /api/plans/security-tools/enabled
+ * Returns enabled security tools based on active plan features
+ */
+export const getEnabledSecurityTools = async (): Promise<ApiResponse<EnabledSecurityTools>> => {
+  const response = await apiClient.get('/api/plans/security-tools/enabled');
   return response.data;
 };

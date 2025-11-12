@@ -3,6 +3,7 @@ export { default as apiClient } from './api';
 
 // Export API services
 export * from './services';
+export * from './dashboard';
 
 // Export constants and utilities
 export * from './constants';
