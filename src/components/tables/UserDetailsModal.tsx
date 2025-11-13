@@ -348,8 +348,16 @@ export default function UserDetailsModal({ isOpen, onClose, user }: UserDetailsM
                                   </h4>
                                   {project.target && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                      <Globe className="w-4 h-4" />
-                                      <span className="truncate">{project.target}</span>
+                                      <Globe className="w-4 h-4 flex-shrink-0" />
+                                      <a 
+                                        href={project.target} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="truncate hover:text-brand-600 dark:hover:text-brand-400 hover:underline transition-colors"
+                                        title={project.target}
+                                      >
+                                        {project.target}
+                                      </a>
                                     </div>
                                   )}
                                   {project.description && (
