@@ -17,6 +17,7 @@ import { showToast } from "@/utils/toast";
 import { useUsers, useUpdateUser, useDeleteUser } from "@/hooks/api/useUsers";
 import { User } from "@/lib/api/services";
 import UserProfileModal from "./UserProfileModal";
+import UserDetailsModal from "./UserDetailsModal";
 
 // Default avatar for users without profile images
 const defaultAvatar = "/images/user/default-avatar.jpg";
@@ -40,6 +41,8 @@ export default function UsersTable({ page = 1, limit = 10, search, status }: Use
   const [editImageError, setEditImageError] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<User | null>(null);
 
   // Generate user initials
   const getUserInitials = (user: User): string => {
@@ -104,6 +107,11 @@ export default function UsersTable({ page = 1, limit = 10, search, status }: Use
   const handleViewProfile = (user: User) => {
     setSelectedUserEmail(user.email);
     setIsProfileModalOpen(true);
+  };
+
+  const handleViewDetails = (user: User) => {
+    setSelectedUserForDetails(user);
+    setIsDetailsModalOpen(true);
   };
 
   const handleEditUser = (user: User) => {
@@ -379,6 +387,27 @@ export default function UsersTable({ page = 1, limit = 10, search, status }: Use
                   {/* Actions */}
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-2">
+                      <Tooltip content="View Details (Subscription & Projects)" position="top">
+                        <button 
+                          onClick={() => handleViewDetails(user)}
+                          className="text-purple-500 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </button>
+                      </Tooltip>
+                      
                       <Tooltip content="View Basic Info" position="top">
                         <button 
                           onClick={() => handleViewUser(user)}
@@ -931,6 +960,16 @@ export default function UsersTable({ page = 1, limit = 10, search, status }: Use
         onClose={() => setIsProfileModalOpen(false)}
         userEmail={selectedUserEmail}
         userName={selectedUser?.name}
+      />
+
+      {/* User Details Modal - Shows Subscription & Projects */}
+      <UserDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedUserForDetails(null);
+        }}
+        user={selectedUserForDetails}
       />
     </div>
   );

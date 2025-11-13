@@ -19,7 +19,10 @@ interface Plan {
   name: string;
   price: number;
   description: string;
-  features: string[];
+  features: string[] | Record<string, any>;
+  maxProjects?: number | null; // Added at root level from backend
+  maxScansPerProject?: number | null;
+  maxScans?: number | null;
   isPopular: boolean;
   isActive: boolean;
   createdAt: string;
@@ -32,6 +35,7 @@ interface PlanFormData {
   price: number;
   description: string;
   features: string[];
+  maxProjects: number | null; // -1 for unlimited, null for not set
   isPopular: boolean;
   isActive: boolean;
 }
@@ -42,6 +46,7 @@ const initialFormData: PlanFormData = {
   price: 0,
   description: "",
   features: [],
+  maxProjects: null,
   isPopular: false,
   isActive: true,
 };
@@ -62,6 +67,7 @@ export default function PlanManagement() {
   const [formData, setFormData] = useState<PlanFormData>(initialFormData);
   const [newFeature, setNewFeature] = useState("");
   const [priceInputValue, setPriceInputValue] = useState<string>('');
+  const [maxProjectsInput, setMaxProjectsInput] = useState<string>('');
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -70,9 +76,23 @@ export default function PlanManagement() {
       setEditingPlan(null);
       setNewFeature("");
       setPriceInputValue('');
+      setMaxProjectsInput('');
     } else if (editingPlan) {
       // When editing, set the price input value
       setPriceInputValue(editingPlan.price.toString());
+      
+      // Extract maxProjects - check root level first, then features object
+      let maxProjects: number | null = null;
+      if (editingPlan.maxProjects !== undefined) {
+        maxProjects = editingPlan.maxProjects;
+      } else {
+        const features = editingPlan.features;
+        if (typeof features === 'object' && features !== null && !Array.isArray(features)) {
+          maxProjects = (features as any).maxProjects ?? null;
+        }
+      }
+      setMaxProjectsInput(maxProjects !== null ? (maxProjects === -1 ? 'unlimited' : maxProjects.toString()) : '');
+      setFormData(prev => ({ ...prev, maxProjects }));
     }
   }, [isModalOpen, editingPlan]);
 
@@ -85,11 +105,21 @@ export default function PlanManagement() {
       return;
     }
 
+    // Build features object with maxProjects
+    const featuresObject: Record<string, any> = {
+      featuresList: formData.features, // Keep string array for backward compatibility
+    };
+    
+    // Add maxProjects if set
+    if (formData.maxProjects !== null) {
+      featuresObject.maxProjects = formData.maxProjects;
+    }
+
     const planData = {
       name: formData.name,
       price: formData.price,
       description: formData.description,
-      features: formData.features,
+      features: featuresObject, // Send as object with maxProjects
       isPopular: formData.isPopular,
       isActive: formData.isActive,
     };
@@ -112,11 +142,35 @@ export default function PlanManagement() {
   // Handle edit
   const handleEdit = (plan: Plan) => {
     setEditingPlan(plan);
+    
+    // Extract features array and maxProjects
+    let featuresArray: string[] = [];
+    let maxProjects: number | null = null;
+    
+    // First check if maxProjects is at root level (new format)
+    if (plan.maxProjects !== undefined) {
+      maxProjects = plan.maxProjects;
+    }
+    
+    if (Array.isArray(plan.features)) {
+      featuresArray = plan.features;
+    } else if (typeof plan.features === 'object' && plan.features !== null) {
+      // Extract featuresList if it exists
+      if ((plan.features as any).featuresList) {
+        featuresArray = (plan.features as any).featuresList;
+      }
+      // Extract maxProjects from features object if not at root level
+      if (maxProjects === null) {
+        maxProjects = (plan.features as any).maxProjects ?? null;
+      }
+    }
+    
     setFormData({
       name: plan.name,
       price: plan.price,
       description: plan.description,
-      features: plan.features,
+      features: featuresArray,
+      maxProjects: maxProjects,
       isPopular: plan.isPopular,
       isActive: plan.isActive,
     });
@@ -231,6 +285,30 @@ export default function PlanManagement() {
     }
   };
 
+  // Handle maxProjects input
+  const handleMaxProjectsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toLowerCase().trim();
+    
+    // If unlimited is already set, don't allow manual input
+    if (formData.maxProjects === -1) {
+      return;
+    }
+    
+    if (value === '') {
+      setMaxProjectsInput('');
+      setFormData({ ...formData, maxProjects: null });
+    } else if (value === 'unlimited') {
+      setMaxProjectsInput('unlimited');
+      setFormData({ ...formData, maxProjects: -1 });
+    } else if (/^\d+$/.test(value)) {
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue) && numValue > 0) {
+        setMaxProjectsInput(value);
+        setFormData({ ...formData, maxProjects: numValue });
+      }
+    }
+  };
+
   if (plansLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -295,6 +373,9 @@ export default function PlanManagement() {
                   Features
                 </TableCell>
                 <TableCell isHeader className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
+                  Max Projects
+                </TableCell>
+                <TableCell isHeader className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
                   Status
                 </TableCell>
                 <TableCell isHeader className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
@@ -305,7 +386,7 @@ export default function PlanManagement() {
             <TableBody>
               {(!plans || plans.length === 0) ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <TableCell colSpan={6} className="px-6 py-8 text-center text-gray-500">
                     No plans found. Create your first plan to get started!
                   </TableCell>
                 </TableRow>
@@ -378,7 +459,30 @@ export default function PlanManagement() {
                         ? 'text-brand-700 dark:text-brand-300' 
                         : 'text-gray-600 dark:text-gray-400'
                     }`}>
-                      {plan.features.length} features
+                      {Array.isArray(plan.features) ? plan.features.length : (plan.features as any)?.featuresList?.length || 0} features
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className={`text-sm font-medium ${
+                      plan.isPopular 
+                        ? 'text-brand-700 dark:text-brand-300' 
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {(() => {
+                        // Check root level first (new format)
+                        if (plan.maxProjects !== undefined && plan.maxProjects !== null) {
+                          if (plan.maxProjects === -1) return 'Unlimited';
+                          return plan.maxProjects.toString();
+                        }
+                        // Fallback to features object (old format)
+                        const features = plan.features;
+                        if (typeof features === 'object' && features !== null && !Array.isArray(features)) {
+                          const maxProjects = (features as any).maxProjects;
+                          if (maxProjects === -1) return 'Unlimited';
+                          if (maxProjects !== undefined && maxProjects !== null) return maxProjects.toString();
+                        }
+                        return 'Not set';
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4">
@@ -509,6 +613,80 @@ export default function PlanManagement() {
                 rows={4}
                 required
               />
+            </div>
+
+            {/* Max Projects */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Maximum Projects <span className="text-gray-500 text-xs">(optional)</span>
+              </label>
+              <div className="space-y-3">
+                {/* Unlimited Toggle */}
+                <label className="flex items-center gap-3 cursor-pointer group p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-400 dark:hover:border-brand-500 transition-all">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={formData.maxProjects === -1}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setMaxProjectsInput('unlimited');
+                          setFormData({ ...formData, maxProjects: -1 });
+                        } else {
+                          setMaxProjectsInput('');
+                          setFormData({ ...formData, maxProjects: null });
+                        }
+                      }}
+                      className="sr-only"
+                    />
+                    <div className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all ${
+                      formData.maxProjects === -1
+                        ? 'bg-brand-500 border-brand-500 ring-2 ring-brand-200 dark:ring-brand-900/30'
+                        : 'border-gray-300 dark:border-gray-600 group-hover:border-brand-400 dark:group-hover:border-brand-500'
+                    }`}>
+                      {formData.maxProjects === -1 && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                    Unlimited Projects
+                  </span>
+                  {formData.maxProjects === -1 && (
+                    <span className="ml-auto px-3 py-1 text-xs font-semibold bg-brand-500 text-white rounded-full shadow-sm">
+                      Unlimited
+                    </span>
+                  )}
+                </label>
+
+                {/* Number Input (disabled if unlimited is checked) */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={maxProjectsInput}
+                    onChange={handleMaxProjectsChange}
+                    disabled={formData.maxProjects === -1}
+                    className={`w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:text-white transition-all ${
+                      formData.maxProjects === -1 
+                        ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' 
+                        : ''
+                    }`}
+                    placeholder={formData.maxProjects === -1 ? 'Unlimited selected' : 'Enter number (e.g., 1, 10, 20)'}
+                  />
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {formData.maxProjects === -1 ? (
+                      <p className="text-brand-600 dark:text-brand-400">✓ Unlimited projects enabled</p>
+                    ) : (
+                      <>
+                        <p>• Enter a number (e.g., 1, 10, 20) for limited projects</p>
+                        <p>• Or check "Unlimited Projects" above</p>
+                        <p>• Leave empty to not set this limit</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Features */}

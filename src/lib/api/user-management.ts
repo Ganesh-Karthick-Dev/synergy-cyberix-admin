@@ -118,3 +118,32 @@ export const getUserStats = async (): Promise<ApiResponse<UserStats>> => {
   const response = await apiClient.get('/api/users/stats/overview');
   return response.data;
 };
+
+/**
+ * Admin: Get user's active subscription by user ID
+ * GET /api/plans/subscription/user/:userId
+ */
+export const getAdminUserSubscription = async (userId: string): Promise<ApiResponse<any>> => {
+  const response = await apiClient.get(`/api/plans/subscription/user/${userId}`);
+  return response.data;
+};
+
+/**
+ * Admin: Get user's projects by user ID
+ * GET /api/projects/admin/user/:userId
+ */
+export const getAdminUserProjects = async (userId: string, includeArchived: boolean = false): Promise<ApiResponse<any[]>> => {
+  const response = await apiClient.get(`/api/projects/admin/user/${userId}`, {
+    params: { includeArchived }
+  });
+  return response.data;
+};
+
+/**
+ * Admin: Get user's security reports (scans) by user ID
+ * GET /api/security-reports/admin/user/:userId
+ */
+export const getAdminUserReports = async (userId: string): Promise<ApiResponse<any[]>> => {
+  const response = await apiClient.get(`/api/security-reports/admin/user/${userId}`);
+  return response.data;
+};

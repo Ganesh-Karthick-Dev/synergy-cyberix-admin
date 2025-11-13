@@ -24,7 +24,7 @@ export interface CreatePlanRequest {
   name: string;
   price: number;
   description: string;
-  features: string[];
+  features: string[] | Record<string, any>; // Allow both array and object (for maxProjects)
   isPopular: boolean;
   isActive: boolean;
 }
@@ -33,7 +33,7 @@ export interface UpdatePlanRequest {
   name?: string;
   price?: number;
   description?: string;
-  features?: string[];
+  features?: string[] | Record<string, any>; // Allow both array and object (for maxProjects)
   isPopular?: boolean;
   isActive?: boolean;
 }
