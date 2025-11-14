@@ -19,7 +19,17 @@ export const useNotifications = (params?: {
   return useQuery({
     queryKey: notificationsKeys.list(params),
     queryFn: () => notificationsApi.getNotifications(params),
-    select: (response) => response.data,
+    select: (response) => {
+      // AxiosResponse structure: response.data = ApiResponse, response.data.data = Notification[]
+      // Ensure we always return an array
+      if (response?.data?.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      return [];
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0, // Always consider data stale to ensure fresh fetches
   });
 };
 
@@ -28,7 +38,10 @@ export const useNotificationStats = () => {
   return useQuery({
     queryKey: notificationsKeys.stats(),
     queryFn: () => notificationsApi.getNotificationStats(),
-    select: (response) => response.data,
+    select: (response) => {
+      // AxiosResponse structure: response.data = ApiResponse, response.data.data = NotificationStats
+      return response?.data?.data || null;
+    },
   });
 };
 
@@ -40,10 +53,10 @@ export const useCreateNotification = () => {
     mutationFn: (data: Omit<Notification, 'id' | 'createdAt' | 'createdBy' | 'deliveryStats'>) =>
       notificationsApi.createNotification(data),
     onSuccess: () => {
-      // Invalidate and refetch notifications list
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.lists() });
-      // Invalidate stats
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.stats() });
+      // Invalidate all notification queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: notificationsKeys.all });
+      // Also explicitly refetch
+      queryClient.refetchQueries({ queryKey: notificationsKeys.all });
     },
   });
 };
@@ -55,10 +68,9 @@ export const useSendNotification = () => {
   return useMutation({
     mutationFn: (id: string) => notificationsApi.sendNotification(id),
     onSuccess: () => {
-      // Invalidate and refetch notifications list
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.lists() });
-      // Invalidate stats
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.stats() });
+      // Invalidate all notification queries
+      queryClient.invalidateQueries({ queryKey: notificationsKeys.all });
+      queryClient.refetchQueries({ queryKey: notificationsKeys.all });
     },
   });
 };
@@ -70,10 +82,9 @@ export const useDeleteNotification = () => {
   return useMutation({
     mutationFn: (id: string) => notificationsApi.deleteNotification(id),
     onSuccess: () => {
-      // Invalidate and refetch notifications list
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.lists() });
-      // Invalidate stats
-      queryClient.invalidateQueries({ queryKey: notificationsKeys.stats() });
+      // Invalidate all notification queries
+      queryClient.invalidateQueries({ queryKey: notificationsKeys.all });
+      queryClient.refetchQueries({ queryKey: notificationsKeys.all });
     },
   });
 };

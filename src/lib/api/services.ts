@@ -109,9 +109,9 @@ export interface Notification {
   title: string;
   message: string;
   type: 'info' | 'warning' | 'success' | 'error';
-  targetAudience: 'all' | 'premium' | 'trial' | 'specific';
+  targetAudience: 'all' | 'premium' | 'trial' | 'active';
   sentAt?: string;
-  status: 'sent' | 'scheduled' | 'failed';
+  status: 'sent' | 'scheduled' | 'failed' | 'draft';
   deliveryStats?: {
     sent: number;
     delivered: number;
